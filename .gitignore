@@ -1,0 +1,11 @@
+vendor/
+.env
+scanner_config.json
+scanner_log.txt
+logs/
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
+node_modules/

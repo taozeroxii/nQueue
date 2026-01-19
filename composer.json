@@ -1,0 +1,14 @@
+{
+    "name": "nqueue/system",
+    "description": "Queue Management System",
+    "require": {
+        "vlucas/phpdotenv": "^5.5",
+        "cboden/ratchet": "^0.4.4",
+        "react/http": "^1.11"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}
