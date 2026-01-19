@@ -1,109 +1,108 @@
 
-# nQueue - Intelligent Queue Management System
+# nQueue - ระบบจัดการคิวอัจฉริยะ
 
 ![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-00758F?style=for-the-badge&logo=mysql&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-nQueue is a robust, multi-screen queue management system designed for hospitals and clinics. It features real-time WebSocket updates, Text-to-Speech (TTS) announcements, and a dedicated Python-based hardware scanner interface for rapid data entry.
+nQueue คือระบบจัดการคิวแบบหลายหน้าจอที่ออกแบบมาสำหรับโรงพยาบาลและคลินิก รองรับการอัปเดตแบบเรียลไทม์ผ่าน WebSocket, การเรียกคิวด้วยเสียง (Text-to-Speech), และระบบสแกนบาร์โค้ดผ่านฮาร์ดแวร์ด้วย Python
 
 ---
 
-## 🚀 Features
+## 🚀 คุณสมบัติเด่น
 
-*   **Real-Time Dashboard**: WebSocket-powered display with instant updates.
-*   **Intelligent TTS**: Automatically announces active queues in Thai (Google/Native voices).
-*   **Visual Cues**: Active queue items blink yellow for 10 seconds for visual retention.
-*   **Hardware Integration**: 
-    *   **Advanced Scanner App**: Map multiple USB barcode scanners to specific rooms on a single PC.
-    *   **64-bit Windows Support**: Native Windows Hook integration.
-*   **Department Filtering**: Isolate queues by department (OPD, ER, Dental, etc.).
-*   **Kiosk Mode**: Web-based self-service kiosk for patient check-in.
+*   **แดชบอร์ดเรียลไทม์**: แสดงผลคิวทันทีผ่าน WebSocket ไม่ต้องรีเฟรชหน้าจอ
+*   **ระบบเรียกคิวเสียงอัจฉริยะ**: ประกาศเรียกคิวภาษาไทยอัตโนมัติ (รองรับเสียง Google/Browser Native)
+*   **การแจ้งเตือนด้วยภาพ**: รายการคิวที่ถูกเรียกจะกระพริบสีเหลืองเป็นเวลา 10 วินาที เพื่อดึงดูดสายตา
+*   **การเชื่อมต่อฮาร์ดแวร์**: 
+    *   **Advanced Scanner App**: รองรับการต่อเครื่องสแกนบาร์โค้ด USB หลายตัวเข้ากับคอมพิวเตอร์เครื่องเดียว และแยกการทำงานอิสระแต่ละห้องได้
+    *   **รองรับ Windows 64-bit**: ใช้ Native Windows Hook ในการดักจับข้อมูลสแกนเนอร์
+*   **ระบบแยกแผนก**: สามารถกรองคิวแสดงผลเฉพาะแผนกได้ (เช่น แผนกอายุรกรรม, ทันตกรรม)
+*   **โหมด Kiosk**: หน้าจอสำหรับผู้ป่วยกดรับคิวเอง
 
 ---
 
-## 🛠 System Architecture
+## 🛠 สถาปัตยกรรมระบบ
 
-| Component | Technology | Description |
+| ส่วนประกอบ | เทคโนโลยี | รายละเอียด |
 | :--- | :--- | :--- |
 | **Backend** | PHP 8.x | RESTful API & WebSocket Server (Ratchet) |
-| **Database** | MySQL | Transactional Queue Data (Write) |
-| **Source** | PostgreSQL | Hospital Information System (Read-Only Source) |
-| **Frontend** | HTML5 / Tailwind | Responsive Dashboard & Kiosk UI |
-| **Caller App** | Python (Tkinter) | "Always On Top" floating window for doctors |
-| **Scanner Hub** | Python (ctypes) | Raw Input Hook to distinguish multiple USB keyboards |
+| **Database** | MySQL | จัดการข้อมูลคิว (Transaction) |
+| **Source** | PostgreSQL | ฐานข้อมูลโรงพยาบาล (HIS Source - Read Only) |
+| **Frontend** | HTML5 / Tailwind | หน้าจอ Dashboard และ Kiosk รองรับทุกขนาดหน้าจอ |
+| **Caller App** | Python (Tkinter) | หน้าต่างเล็ก "Always On Top" สำหรับแพทย์กดเรียกคิว |
+| **Scanner Hub** | Python (ctypes) | โปรแกรมจัดการเครื่องสแกน แยกอุปกรณ์ด้วย Raw Input Hook |
 
 ---
 
-## 📦 Installation
+## 📦 การติดตั้ง
 
-### 1. Prerequisites
-*   Web Server (Apache/Nginx via Laragon, XAMPP, etc.)
-*   PHP 8.0+ with `pdo_mysql`, `pdo_pgsql` extensions.
+### 1. ความต้องการระบบเบื้องต้น
+*   Web Server (Apache/Nginx เช่น Laragon, XAMPP)
+*   PHP 8.0+ พร้อมส่วนเสริม `pdo_mysql`, `pdo_pgsql`
 *   Python 3.10+
-*   Composer (PHP Dependency Manager)
+*   Composer (สำหรับจัดการ PHP Library)
 
-### 2. Backend Setup
-1.  Clone/Copy project to webroot (e.g., `D:\laragon\www\nQueue`).
-2.  Install dependencies:
+### 2. ติดตั้งส่วน Backend
+1.  คัดลอกโปรเจกต์ไปยังโฟลเดอร์เว็บ (เช่น `D:\laragon\www\nQueue`)
+2.  ติดตั้ง Library:
     ```bash
     composer install
     ```
-3.  Configure Environment:
+3.  ตั้งค่า Environment:
     ```bash
     cp .env.example .env
     ```
-    *Edit `.env` with your MySQL and PostgreSQL credentials.*
+    *แก้ไขไฟล์ `.env` ด้วยข้อมูลการเชื่อมต่อฐานข้อมูล MySQL และ PostgreSQL ของคุณ*
 
-4.  Import Database:
-    *   Import `database.sql` into your MySQL server (`nqueue` database).
+4.  นำเข้าฐานข้อมูล:
+    *   Import ไฟล์ `database.sql` เข้าสู่ MySQL (สร้างฐานข้อมูลชื่อ `nqueue`)
 
-### 3. Application Setup (Python)
-Navigate to the python caller directory and install requirements:
+### 3. ติดตั้งโปรแกรม Python
+เข้าไปที่โฟลเดอร์ python_caller และติดตั้ง Library ที่จำเป็น:
 ```bash
 cd python_caller
 pip install -r requirements.txt
 ```
 
-### 4. Start WebSocket Server
-For real-time features, the WebSocket server must be running:
+### 4. เริ่มต้นระบบ WebSocket (สำหรับการอัปเดตเรียลไทม์)
+จำเป็นต้องรัน service นี้ไว้เบื้องหลังเสมอ:
 ```bash
 cd bin
 php ws_server.php
 ```
-*(Recommend using Supervisor or a bat script to keep this running)*
 
 ---
 
-## 🖥 Usage Guide
+## 🖥 คู่มือการใช้งาน
 
-### 1. Main Dashboard (TV Display)
+### 1. หน้าจอแสดงผลรวม (Main Dashboard)
 *   **URL:** `http://localhost/nQueue/public/multipledisplay.php`
-*   **New Feature:** Header displays `[Department] - [Room Types]` dynamically.
-*   **Setup:** Click the **Gear Icon** to select the department explicitly.
-*   **Sound:** Click the "Enable Sound" overlay once to allow TTS.
+*   **ฟีเจอร์ใหม่:** ส่วนหัวแสดง `[ชื่อแผนก] - [รายการห้องตรวจ]` แบบไดนามิก
+*   **การตั้งค่า:** คลิก **ไอคอนฟันเฟือง** เพื่อเลือกแผนกที่ต้องการแสดงผล
+*   **เสียงเรียก:** ต้องคลิกที่หน้าจอ 1 ครั้ง (Overlay "Enable Sound") เพื่อเปิดใช้งานเสียงเรียกอัตโนมัติ
 
-### 2. Scanner Hub (Hardware Integration)
-Instead of standard keyboard input, use the **Raw Scanner App** to map specific USB scanners to specific rooms.
-1.  Run `python python_caller/raw_scanner.py`.
-2.  Go to **Settings** tab.
-3.  Click **Refresh Rooms**.
-4.  Find the target room (e.g., Screening Room 1) and click **Select Device**.
-5.  Scan a barcode with the handheld scanner.
-6.  The device handle (e.g., `\\?\HID...`) will be mapped.
-7.  **Monitor Tab:** View live logs and successful insertions.
+### 2. โปรแกรมจัดการสแกนเนอร์ (Scanner Hub)
+สำหรับเครื่องคอมพิวเตอร์ที่ต่อเครื่องยิงบาร์โค้ด USB หลายตัว
+1.  รันคำสั่ง `python python_caller/raw_scanner.py`
+2.  ไปที่แท็บ **Settings**
+3.  คลิก **Refresh Rooms**
+4.  เลือกห้องที่ต้องการ แล้วคลิก **Select Device**
+5.  ยิงบาร์โค้ดด้วยเครื่องสแกนที่ต้องการจับคู่
+6.  โปรแกรมจะบันทึกค่า Device Handle (เช่น `\\?\HID...`)
+7.  **แท็บ Monitor:** ดูสถานะการทำงานและประวัติการยิงบาร์โค้ด
 
-### 3. Doctor Caller App
-*   Run `python python_caller/caller.py`.
-*   Small floating window for doctors to call "Next Patient".
-*   Enter `Room ID` -> `Set` -> `Call Next`.
+### 3. โปรแกรมเรียกคิวสำหรับแพทย์ (Doctor Caller App)
+*   รันคำสั่ง `python python_caller/caller.py`
+*   หน้าต่างเล็กๆ ลอยอยู่เหนือโปรแกรมอื่น
+*   ระบุ `Room ID` -> กด `Set` -> กด `Call Next` เพื่อเรียกคิวถัดไป
 
 ---
 
-## 🔧 Kiosk Mode (Chrome/Edge)
+## 🔧 การตั้งค่า Kiosk Mode (Chrome/Edge)
 
-Create a shortcut with the following target to run in secure Kiosk mode:
+สร้าง Shortcut เพื่อเปิดหน้าจอแสดงผลแบบเต็มจอ และซ่อน Error Bubble ต่างๆ:
 
 ```bat
 "C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk --incognito --disable-pinch --overscroll-history-navigation=0 http://localhost/nQueue/public/multipledisplay.php
@@ -111,17 +110,17 @@ Create a shortcut with the following target to run in secure Kiosk mode:
 
 ---
 
-## 🐛 Troubleshooting
+## 🐛 การแก้ไขปัญหาเบื้องต้น
 
-| Issue | Solution |
+| ปัญหา | วิธีแก้ไข |
 | :--- | :--- |
-| **Scanner "Error 0" / Crash** | Ensure you are using the latest `raw_scanner.py` (V17+) which fixes 64-bit `WNDPROC` signatures. |
-| **No Sound** | Browsers block autoplay. You MUST interact with the page once (click the overlay). |
-| **WebSocket Disconnected** | Check if `php bin/ws_server.php` is running. Status bar on dashboard will turn Red if disconnected. |
-| **Database Connection** | Verify `.env` settings. Ensure strict mapping of `DB_HOST` vs `PG_HOST`. |
+| **Scanner "Error 0" / Crash** | ตรวจสอบว่าใช้ไฟล์ `raw_scanner.py` เวอร์ชั่นใหม่ (V17+) ซึ่งแก้ไขปัญหา 64-bit แล้ว |
+| **เสียงไม่ดัง** | Browser บล็อกการเล่นเสียงอัตโนมัติ ต้องคลิกที่หน้าจอ 1 ครั้งเพื่ออนุญาต |
+| **WebSocket หลุด (แถบแดง)** | ตรวจสอบว่าได้รัน `php bin/ws_server.php` ค้างไว้หรือไม่ |
+| **เชื่อมต่อฐานข้อมูลไม่ได้** | ตรวจสอบไฟล์ `.env` และดูค่า `DB_HOST` หรือ `PG_HOST` ให้ถูกต้อง |
 
 ---
 
-## 📜 License
+## 📜 ลิขสิทธิ์
 
-Internal Use - Hospital / Clinic Management System.
+สำหรับใช้งานภายในหน่วยงาน (Hospital / Clinic Internal Use)
