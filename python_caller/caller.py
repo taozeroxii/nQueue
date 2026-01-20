@@ -104,7 +104,7 @@ class MiniCallerApp:
                                    bg=THEME['bg_card'], fg=THEME['text_dim'])
         self.lbl_status.pack(pady=(0, 5))
 
-        # --- 3. Buttons Grid (All 5 Buttons) ---
+        # --- 3. Buttons Grid (Redesigned) ---
         btn_frame = tk.Frame(self.root, bg=THEME['bg_main'])
         btn_frame.pack(fill='x', side='bottom', padx=8, pady=(0, 10))
 
@@ -119,19 +119,15 @@ class MiniCallerApp:
                           bg=bg, fg='white',
                           font=("Segoe UI", 8, "bold"),
                           bd=0, relief='flat', cursor='hand2')
-            b.grid(row=row, column=col, columnspan=colspan, sticky='nsew', padx=1, pady=1, ipady=4)
+            b.grid(row=row, column=col, columnspan=colspan, sticky='nsew', padx=1, pady=1, ipady=12) # Increased height
             b.bind("<Enter>", lambda e: b.config(bg=h_bg))
             b.bind("<Leave>", lambda e: b.config(bg=bg))
             return b
 
-        # Row 1: Recall (1 slot) | Call Next (2 slots - bigger)
-        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 0, 0, 1)
-        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 0, 1, 2)
-
-        # Row 2: Lab | Xray | List (Equal size)
-        mk_btn("🧪 Lab", lambda: self.set_status('lab'), THEME['btn_sec'], THEME['btn_sec_h'], 1, 0)
-        mk_btn("☢ Xray", lambda: self.set_status('xray'), THEME['btn_sec'], THEME['btn_sec_h'], 1, 1)
-        mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 1, 2)
+        # Single Row Layout
+        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 0, 0)
+        mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 0, 1)
+        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 0, 2)
 
     # --- Logic Section (Same Logic) ---
 
@@ -256,15 +252,35 @@ class MiniCallerApp:
         return tree
 
     def on_list_action(self, event, tree, type_key):
-        try:
-            threading.Thread(target=lambda: self._call_specific(tree.selection()[0])).start()
-        except: pass
+        selection = tree.selection()
+        if not selection: return
+        db_id = selection[0]
+        
+        if type_key == 'waiting':
+            # Create Pop-up Menu
+            menu = tk.Menu(self.root, tearoff=0)
+            menu.add_command(label="🔊 Call This Patient", command=lambda: threading.Thread(target=lambda: self._call_specific(db_id)).start())
+            menu.add_separator()
+            menu.add_command(label="🧪 Send to Lab", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'lab')).start())
+            menu.add_command(label="☢ Send to X-ray", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'xray')).start())
+            menu.tk_popup(event.x_root, event.y_root)
+        else:
+             # Default Call for other lists (or maybe nothing?)
+             # Let's keep call for others for now, or just return
+             if type_key != 'history':
+                threading.Thread(target=lambda: self._call_specific(db_id)).start()
 
     def _call_specific(self, db_id):
         try:
             requests.post(self.config['api_url'], json={'action': 'call_specific', 'id': db_id, 'room': self.room_id}, timeout=2)
             self.root.after(100, lambda: [self.refresh_queue(), self.load_all_lists()])
         except: pass
+
+    def _update_status(self, db_id, status):
+         try:
+            requests.post(self.config['api_url'], json={'id': db_id, 'status': status}, timeout=2)
+            self.root.after(100, lambda: [self.refresh_queue(), self.load_all_lists()])
+         except: pass
 
     def load_all_lists(self):
         threading.Thread(target=self._do_fetch_all_lists).start()
@@ -300,7 +316,8 @@ class MiniCallerApp:
 
     def _do_fetch_status(self):
         try:
-            r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=1", timeout=2)
+            # Change limit 1 -> 10 to fix update issue
+            r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=10", timeout=2)
             data = r.json()
             found = False
             if data['success']:
