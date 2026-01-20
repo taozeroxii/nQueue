@@ -755,7 +755,7 @@
             }
         }, 10000);
 
-        function processTTSQueue() {
+        async function processTTSQueue() {
             if (isSpeaking || ttsQueue.length === 0) return;
 
             const item = ttsQueue.shift();
@@ -763,48 +763,62 @@
 
             console.log("Processing TTS Item:", item); // DEBUG
 
-            const utterance = new SpeechSynthesisUtterance(item.text);
-            utterance.lang = item.lang;
-            utterance.rate = 1.0;
-            utterance.pitch = 1.2;
-
-            // Re-fetch voices to ensure we have the latest list (Chrome idiosyncrasy)
-            const voices = window.speechSynthesis.getVoices();
-            console.log("Available Voices during speak:", voices.length); // DEBUG
-
-            let thaiVoice = voices.find(v => v.lang.includes('th') && (v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya')));
-            if (!thaiVoice) thaiVoice = voices.find(v => v.lang.includes('th'));
-
-            if (thaiVoice) {
-                // Default fallback
-                utterance.voice = thaiVoice;
+            try {
+                // Hybrid 1: Try Google Translate TTS
+                await playGoogleTTS(item.text);
+            } catch (err) {
+                console.warn("Google TTS failed, falling back to Native:", err);
+                // Hybrid 2: Fallback to Native
+                await playNativeTTS(item);
             }
 
-            // Override with user selection if exists and valid
-            const savedVoiceURI = localStorage.getItem('tts_voice');
-            if (savedVoiceURI) {
-                const specificVoice = voices.find(v => v.voiceURI === savedVoiceURI);
-                if (specificVoice) {
-                    utterance.voice = specificVoice;
-                    console.log("Using Saved Voice:", specificVoice.name);
-                } else {
-                    console.warn("Saved voice not found in current list, using default");
+            isSpeaking = false;
+            setTimeout(processTTSQueue, 500);
+        }
+
+        function playGoogleTTS(text) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=th&client=tw-ob`);
+                audio.onended = resolve;
+                audio.onerror = reject;
+                // Timeout fallback if it hangs (e.g. 5s)
+                const timeout = setTimeout(() => {
+                    audio.pause();
+                    reject("Timeout");
+                }, 5000);
+
+                audio.play().catch(reject);
+            });
+        }
+
+        function playNativeTTS(item) {
+            return new Promise((resolve) => {
+                const utterance = new SpeechSynthesisUtterance(item.text);
+                utterance.lang = item.lang;
+                utterance.rate = 1.0;
+                utterance.pitch = 1.2;
+
+                const voices = window.speechSynthesis.getVoices();
+                let thaiVoice = voices.find(v => v.lang.includes('th') && (v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya')));
+                if (!thaiVoice) thaiVoice = voices.find(v => v.lang.includes('th'));
+                if (thaiVoice) utterance.voice = thaiVoice;
+
+                const savedVoiceURI = localStorage.getItem('tts_voice');
+                if (savedVoiceURI) {
+                    const specificVoice = voices.find(v => v.voiceURI === savedVoiceURI);
+                    if (specificVoice) utterance.voice = specificVoice;
                 }
-            }
 
-            utterance.onend = function () {
-                console.log("TTS Finished"); // DEBUG
-                isSpeaking = false;
-                setTimeout(processTTSQueue, 500);
-            };
+                utterance.onend = () => {
+                    resolve();
+                };
+                utterance.onerror = (e) => {
+                    console.error("Native TTS Error", e);
+                    resolve(); // Resolve anyway to unblock queue
+                };
 
-            utterance.onerror = function (e) {
-                console.error("TTS Error:", e); // DEBUG
-                isSpeaking = false;
-                setTimeout(processTTSQueue, 500);
-            };
-
-            window.speechSynthesis.speak(utterance);
+                window.speechSynthesis.speak(utterance);
+            });
         }
 
         // Initialize voices
