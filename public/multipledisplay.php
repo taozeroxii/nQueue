@@ -158,6 +158,13 @@
                             class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl">Test</button>
                     </div>
                 </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-2 text-sm">Call Repetitions</label>
+                    <input type="number" id="input-tts-repeat" min="1" max="5"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                        placeholder="Default: 1">
+                </div>
             </div>
 
             <div class="flex justify-end gap-3 mt-8">
@@ -255,6 +262,7 @@
         let currentRoomFilter = localStorage.getItem('room_filter') || '';
         let ttsPrefix = localStorage.getItem('tts_prefix') || 'ขอเชิญหมายเลข';
         let ttsMiddle = localStorage.getItem('tts_middle') || 'ที่ห้องตรวจ';
+        let ttsRepeat = parseInt(localStorage.getItem('tts_repeat')) || 1;
 
         let allRooms = [];
         let allQueues = [];
@@ -277,6 +285,7 @@
         const inputTtsPrefix = document.getElementById('input-tts-prefix');
         const inputTtsMiddle = document.getElementById('input-tts-middle');
         const inputVoice = document.getElementById('input-voice');
+        const inputTtsRepeat = document.getElementById('input-tts-repeat');
 
         const deptOverlay = document.getElementById('dept-select-overlay');
         const deptListEl = document.getElementById('dept-selection-list');
@@ -297,6 +306,7 @@
 
             inputTtsPrefix.value = ttsPrefix;
             inputTtsMiddle.value = ttsMiddle;
+            inputTtsRepeat.value = ttsRepeat;
 
             // Populate Room Filter based on current Dept
             updateRoomFilterOptions(currentDeptFilter, currentRoomFilter);
@@ -321,6 +331,7 @@
             currentRoomFilter = inputRoomFilter.value;
             ttsPrefix = inputTtsPrefix.value || 'ขอเชิญหมายเลข';
             ttsMiddle = inputTtsMiddle.value || 'ที่ห้องตรวจ';
+            ttsRepeat = parseInt(inputTtsRepeat.value) || 1;
             const selectedVoice = inputVoice.value;
 
             localStorage.setItem('dept_filter', currentDeptFilter);
@@ -328,6 +339,7 @@
             localStorage.setItem('tts_prefix', ttsPrefix);
             localStorage.setItem('tts_middle', ttsMiddle);
             localStorage.setItem('tts_voice', selectedVoice);
+            localStorage.setItem('tts_repeat', ttsRepeat);
 
             // 2. Apply Titles (Client side override or just re-fetch if we had a backend save)
             // For now, let's trust the inputs for immediate feedback
@@ -725,7 +737,11 @@
                 processAndRender();
             }, 11000);
 
-            ttsQueue.push({ text: text, lang: 'th-TH' });
+            // Repeat N times
+            for (let i = 0; i < ttsRepeat; i++) {
+                ttsQueue.push({ text: text, lang: 'th-TH' });
+            }
+
             processTTSQueue();
         }
 
