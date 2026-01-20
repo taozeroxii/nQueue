@@ -108,13 +108,38 @@
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
                         placeholder="e.g. แผนกอายุรกรรม">
                 </div>
-                <div>
-                    <label class="block text-slate-400 mb-2 text-sm">Filter by Department (Room Group)</label>
-                    <select id="input-dept-filter"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
-                        <option value="">Show All</option>
-                    </select>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-400 mb-2 text-sm">TTS Prefix</label>
+                        <input type="text" id="input-tts-prefix"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                            placeholder="default: ขอเชิญหมายเลข">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-2 text-sm">TTS Middle</label>
+                        <input type="text" id="input-tts-middle"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                            placeholder="default: ที่ห้องตรวจ">
+                    </div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-400 mb-2 text-sm">Filter by Department</label>
+                        <select id="input-dept-filter" onchange="onDeptFilterChange()"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
+                            <option value="">Show All</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-2 text-sm">Filter by Room</label>
+                        <select id="input-room-filter"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
+                            <option value="">Show All Rooms</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-slate-400 mb-2 text-sm">Subtitle</label>
                     <input type="text" id="input-dept-sub"
@@ -198,26 +223,113 @@
 
     <script>
         // State
-        let currentDeptFilter = localStorage.getItem('dept_filter');
+        let currentDeptFilter = localStorage.getItem('dept_filter') || ''; // Default empty if null
+        let currentRoomFilter = localStorage.getItem('room_filter') || '';
+        let ttsPrefix = localStorage.getItem('tts_prefix') || 'ขอเชิญหมายเลข';
+        let ttsMiddle = localStorage.getItem('tts_middle') || 'ที่ห้องตรวจ';
+
         let allRooms = [];
         let allQueues = [];
+        let deptList = []; // Store depts for usage in modal
 
         let calledPage = 0;
         let waitingPage = 0;
-        const CALLED_PAGE_SIZE = 15; // Increased to 15
+        const CALLED_PAGE_SIZE = 15;
         const WAITING_PAGE_SIZE = 10;
 
         // Elements
         const deptNameEl = document.getElementById('dept-name');
         const deptSubEl = document.getElementById('dept-sub');
         const modal = document.getElementById('settings-modal');
+
         const inputName = document.getElementById('input-dept-name');
         const inputSub = document.getElementById('input-dept-sub');
         const inputFilter = document.getElementById('input-dept-filter');
+        const inputRoomFilter = document.getElementById('input-room-filter');
+        const inputTtsPrefix = document.getElementById('input-tts-prefix');
+        const inputTtsMiddle = document.getElementById('input-tts-middle');
+
         const deptOverlay = document.getElementById('dept-select-overlay');
         const deptListEl = document.getElementById('dept-selection-list');
         const calledContainer = document.getElementById('current-called-container');
         const waitingContainer = document.getElementById('waiting-list');
+
+        function openSettings() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Load current values to inputs
+            inputName.value = deptNameEl.innerText;
+            inputSub.value = deptSubEl.innerText;
+            inputFilter.value = currentDeptFilter;
+
+            inputTtsPrefix.value = ttsPrefix;
+            inputTtsMiddle.value = ttsMiddle;
+
+            // Populate Room Filter based on current Dept
+            updateRoomFilterOptions(currentDeptFilter, currentRoomFilter);
+        }
+
+        function closeSettings() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function saveSettings() {
+            // UI Text (Optional - handled by backend primarily, but we can override locally if needed)
+            // But per code structure, loadInitData fetches api/settings.php. 
+            // If we want "This Machine" settings to override, we should use localStorage for titles too?
+            // The request says "Increase change dept and room at that page".
+
+            // 1. Save to LocalStorage
+            currentDeptFilter = inputFilter.value;
+            currentRoomFilter = inputRoomFilter.value;
+            ttsPrefix = inputTtsPrefix.value || 'ขอเชิญหมายเลข';
+            ttsMiddle = inputTtsMiddle.value || 'ที่ห้องตรวจ';
+
+            localStorage.setItem('dept_filter', currentDeptFilter);
+            localStorage.setItem('room_filter', currentRoomFilter);
+            localStorage.setItem('tts_prefix', ttsPrefix);
+            localStorage.setItem('tts_middle', ttsMiddle);
+
+            // 2. Apply Titles (Client side override or just re-fetch if we had a backend save)
+            // For now, let's trust the inputs for immediate feedback
+            // Note: inputName and inputSub seem to be intended for Global Settings? 
+            // The prompt says "Change dept and room at that page". 
+            // Let's assume inputName/Sub are for local display override if desired, 
+            // OR if they are intended to save back to server, we'd need an API.
+            // Existing code loaded from api/settings.php.
+            // I will NOT save name/sub to server as I don't see a PUT endpoint ready in the file list.
+            // I will prioritize the "Text" and "Filter" logic requested.
+
+            closeSettings();
+
+            // Reload Data with new filters
+            calledPage = 0;
+            loadRoomsAndQueue();
+        }
+
+        async function onDeptFilterChange() {
+            const dept = inputFilter.value;
+            // Fetch rooms for this dept to populate room select
+            await updateRoomFilterOptions(dept, '');
+        }
+
+        async function updateRoomFilterOptions(dept, selectedRoom) {
+            try {
+                let url = 'api/rooms.php';
+                if (dept) url += `?department=${encodeURIComponent(dept)}`;
+                const r = await fetch(url);
+                const d = await r.json();
+                if (d.success) {
+                    const rooms = d.data;
+                    inputRoomFilter.innerHTML = '<option value="">Show All Rooms</option>' +
+                        rooms.map(r => `<option value="${r.id}">${r.room_name}</option>`).join('');
+
+                    if (selectedRoom) inputRoomFilter.value = selectedRoom;
+                }
+            } catch (e) { console.error(e); }
+        }
 
         // Initial Load
         async function loadInitData() {
@@ -237,9 +349,12 @@
                 const data2 = await res2.json();
                 if (data2.success) {
                     const depts = data2.data;
+                    deptList = depts; // Save for later
                     inputFilter.innerHTML = '<option value="">Show All</option>' +
                         depts.map(d => `<option value="${d}">${d}</option>`).join('');
-                    if (currentDeptFilter !== null) inputFilter.value = currentDeptFilter;
+
+                    // Restore saved filter
+                    if (currentDeptFilter) inputFilter.value = currentDeptFilter;
 
                     deptListEl.innerHTML = depts.map(d => `
                         <button onclick="selectDept('${d}')" class="w-full py-4 px-6 bg-slate-800 hover:bg-brand-600 text-white rounded-xl text-xl font-bold transition border border-slate-700 hover:border-brand-500">
@@ -247,7 +362,7 @@
                         </button>
                     `).join('');
 
-                    if (currentDeptFilter === null) {
+                    if (!currentDeptFilter) {
                         deptOverlay.classList.remove('hidden');
                         deptOverlay.classList.add('flex');
                     } else {
@@ -300,12 +415,7 @@
                         }
                     } else {
                         // Default / All
-                        // If we want to restore default from settings, we'd need to re-fetch or store it.
-                        // For now, assume "All Departments" if no filter.
-                        // Or just don't touch it if we want to keep the "General OPD Queue" text from settings.
-                        // But if we switch FROM a specific dept TO all, we should probably reset.
-                        // Let's fetch settings again quickly or just set to "All Departments".
-                        deptSubEl.innerText = "All Departments";
+                        // deptSubEl.innerText = "All Departments";
                     }
                 }
             } catch (e) { allRooms = []; }
@@ -374,6 +484,8 @@
                     const decorClass = isBlinking ? "bg-white/20" : "bg-white/10";
 
                     // Active Card
+                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return ''; // Skip if filtered out
+
                     return `
                         <div class="relative overflow-hidden rounded-3xl ${containerClass} p-6 flex flex-col items-center justify-center text-center shadow-2xl border-4 transition-transform hover:scale-105">
                              <!-- Decorative Circle bg -->
@@ -392,6 +504,8 @@
                     `;
                 } else {
                     // Idle (Grey) - Compact Design
+                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return ''; // Skip if filtered out
+
                     return `
                         <div class="bg-slate-800/40 p-4 rounded-2xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-60 grayscale hover:opacity-80 transition-opacity">
                             <span class="text-xl text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
@@ -520,7 +634,7 @@
         function speakQueue(item) {
             console.log("Queueing TTS:", item); // DEBUG
             // "ขอเชิญหมายเลข ... ที่ห้อง ... ค่ะ"
-            const text = `ขอเชิญหมายเลข ${item.oqueue || item.vn} ที่ห้องตรวจ ${item.room_number}ครับ`;
+            const text = `${ttsPrefix} ${item.oqueue || item.vn} ${ttsMiddle} ${item.room_number}ครับ`;
 
             // Mark time for blinking effect
             lastCallTimes[item.room_number] = Date.now();
