@@ -25,12 +25,15 @@ try {
         $params[':room'] = $room;
     }
 
-    // Logic: 
-    // Show 'called' first (maybe valid for few minutes?), then 'waiting'.
-    // Or just all non-completed?
-    // User requested: 1 screen all, 1 screen separated.
-    // Let's filter out 'completed' unless requested.
-    $where[] = "status != 'completed'";
+    // Logic:
+    // User requested: "Show all statuses but only for TODAY"
+
+    // 1. Filter by Date (Today)
+    // assuming created_at is datetime or timestamp
+    $where[] = "DATE(created_at) = CURDATE()";
+
+    // 2. Remove 'completed' exclusion because user said "Show every status"
+    // $where[] = "status != 'completed'"; 
 
     $sql = "SELECT * FROM queues";
     if (!empty($where)) {

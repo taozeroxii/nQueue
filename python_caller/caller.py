@@ -84,23 +84,33 @@ class MiniCallerApp:
         # Let's do a uniform grid or Next bigger. 
         # "3 slots" implies equal width? Let's try equal.
         
+        # 3. Action Buttons (Single Row, Icons Only)
+        # Recall | Next | Lab | X-Ray | Lists
+        
         btn_frame = tk.Frame(self.root, pady=5)
         btn_frame.pack(fill='x', padx=5, pady=5)
         
-        # Weighted grid
-        btn_frame.columnconfigure(0, weight=1)
-        btn_frame.columnconfigure(1, weight=1)
-        btn_frame.columnconfigure(2, weight=1)
+        # Weighted grid (5 columns)
+        for i in range(5):
+             btn_frame.columnconfigure(i, weight=1)
 
-        b_recall = ttk.Button(btn_frame, text="Recall", command=self.recall_prev, style='Action.TButton')
-        b_recall.grid(row=0, column=0, sticky='ew', padx=2)
+        # Style override for text
+        self.style.configure('Short.TButton', font=('Segoe UI', 10, 'bold'))
 
-        b_next = ttk.Button(btn_frame, text="Call Next", command=self.call_next, style='Action.TButton')
-        b_next.grid(row=0, column=1, sticky='ew', padx=2)
+        b_recall = ttk.Button(btn_frame, text="reCall", command=self.recall_prev, style='Short.TButton')
+        b_recall.grid(row=0, column=0, sticky='ew', padx=1)
+        
+        b_next = ttk.Button(btn_frame, text="call", command=self.call_next, style='Short.TButton')
+        b_next.grid(row=0, column=1, sticky='ew', padx=1)
 
-        b_list = ttk.Button(btn_frame, text="List", command=self.show_list, style='Action.TButton')
-        b_list.grid(row=0, column=2, sticky='ew', padx=2)
+        b_lab = ttk.Button(btn_frame, text="lab", command=lambda: self.set_status('lab'), style='Short.TButton')
+        b_lab.grid(row=0, column=2, sticky='ew', padx=1)
 
+        b_xray = ttk.Button(btn_frame, text="xray", command=lambda: self.set_status('xray'), style='Short.TButton')
+        b_xray.grid(row=0, column=3, sticky='ew', padx=1)
+
+        b_list = ttk.Button(btn_frame, text="list", command=self.show_list, style='Short.TButton')
+        b_list.grid(row=0, column=4, sticky='ew', padx=1)
 
     def open_settings(self):
         win = tk.Toplevel(self.root)
@@ -180,6 +190,36 @@ class MiniCallerApp:
     def recall_prev(self):
         threading.Thread(target=lambda: self._post_action('recall')).start()
 
+    def set_status(self, status):
+        # Update current called patient (ID?)
+        # We need to know who is currently called? 
+        # Ideally we store current displayed ID or just fetch active one
+        # Let's assume we can pass room and status to 'update_status.php' if we modify it
+        # BUT standard pattern is `id` + `status`.
+        # So we first need to know the ID of the 'called' patient in this room.
+        threading.Thread(target=lambda: self._do_set_status_room_active(status)).start()
+        
+    def _do_set_status_room_active(self, status):
+        try:
+            # 1. Get Active
+            r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=1", timeout=2)
+            d = r.json()
+            found_id = None
+            if d['success']:
+                for item in d['data']:
+                    if item['status'] == 'called':
+                        found_id = item['id']
+                        break
+            
+            if found_id:
+                # 2. Update
+                payload = {'id': found_id, 'status': status}
+                requests.post(self.config['api_url'], json=payload, timeout=2)
+                self.root.after(100, self.refresh_queue)
+            else:
+                pass # No active patient
+        except: pass
+
     def _post_action(self, action):
         try:
             r = requests.post(self.config['api_url'], json={'action': action, 'room': self.room_id}, timeout=2)
@@ -193,64 +233,127 @@ class MiniCallerApp:
     def show_list(self):
         # Create Popup
         self.list_win = tk.Toplevel(self.root)
-        self.list_win.title(f"Waiting List - Room {self.room_id}")
-        self.list_win.geometry("400x300")
+        self.list_win.title(f"Lists - Room {self.room_id}")
+        self.list_win.geometry("500x400")
         
-        # UI: Treeview
-        columns = ('q', 'name', 'status')
-        self.tree = ttk.Treeview(self.list_win, columns=columns, show='headings')
-        self.tree.heading('q', text='Queue')
-        self.tree.heading('name', text='Name')
-        self.tree.heading('status', text='Status')
+        # Tabs: Waiting | Lab | X-Ray | Processed
+        tabs = ttk.Notebook(self.list_win)
+        tabs.pack(fill='both', expand=True, padx=5, pady=5)
         
-        self.tree.column('q', width=80, anchor='center')
-        self.tree.column('name', width=200)
-        self.tree.column('status', width=80, anchor='center')
+        self.tab_waiting = ttk.Frame(tabs)
+        self.tab_lab = ttk.Frame(tabs)
+        self.tab_xray = ttk.Frame(tabs)
+        self.tab_processed = ttk.Frame(tabs) # For Completed/Called
         
-        self.tree.pack(fill='both', expand=True, padx=5, pady=5)
+        tabs.add(self.tab_waiting, text='Waiting')
+        tabs.add(self.tab_lab, text='Lab')
+        tabs.add(self.tab_xray, text='X-Ray')
+        tabs.add(self.tab_processed, text='History') # Called + Completed
+        
+        # Setup Trees
+        self.tree_waiting = self._create_tree(self.tab_waiting, 'waiting')
+        self.tree_lab = self._create_tree(self.tab_lab, 'lab')
+        self.tree_xray = self._create_tree(self.tab_xray, 'xray')
+        self.tree_processed = self._create_tree(self.tab_processed, 'history')
         
         # Refresh Button
-        btn = ttk.Button(self.list_win, text="Refresh", command=self.load_list_data)
+        btn = ttk.Button(self.list_win, text="Refresh All", command=self.load_all_lists)
         btn.pack(pady=5)
         
         # Initial Load
-        self.load_list_data()
+        self.load_all_lists()
 
-    def load_list_data(self):
-        # Clear existing
-        for i in self.tree.get_children():
-            self.tree.delete(i)
-            
-        threading.Thread(target=self._do_fetch_list).start()
+    def _create_tree(self, parent, type_key):
+        columns = ('q', 'name', 'status', 'action')
+        tree = ttk.Treeview(parent, columns=columns, show='headings')
+        tree.heading('q', text='Queue')
+        tree.heading('name', text='Name')
+        tree.heading('status', text='Status')
+        tree.heading('action', text='Double Click to Call')
+        
+        tree.column('q', width=80, anchor='center')
+        tree.column('name', width=180)
+        tree.column('status', width=80, anchor='center')
+        tree.column('action', width=120, anchor='center')
+        
+        tree.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Bind Double Click
+        tree.bind("<Double-1>", lambda e: self.on_list_action(e, tree, type_key))
+        return tree
 
-    def _do_fetch_list(self):
+    def on_list_action(self, event, tree, type_key):
+        item_id = tree.selection()[0]
+        item = tree.item(item_id)
+        # We stored real ID in tags or valid? 
+        # Treeview item iid is obscure. Best store ID in values or iid.
+        # Let's use IID as ID.
+        real_id = item_id 
+        
+        # Action: Call Specific
+        threading.Thread(target=lambda: self._call_specific(real_id)).start()
+
+    def _call_specific(self, db_id):
         try:
-            # Fetch Waiting items
-            url = f"{self.api_base}/queue_data.php?room={self.room_id}&status=waiting" 
-            # Note: queue_data.php might need 'status' param support or client side filter. 
-            # Assuming it returns all or we filter. 
+            payload = {'action': 'call_specific', 'id': db_id, 'room': self.room_id}
+            requests.post(self.config['api_url'], json=payload, timeout=2)
+            self.root.after(100, self.refresh_queue)
+            self.root.after(200, self.load_all_lists) # Refresh lists too which removes the item
+        except: pass
+
+    def load_all_lists(self):
+        threading.Thread(target=self._do_fetch_all_lists).start()
+
+    def _do_fetch_all_lists(self):
+        try:
+            # Fetch ALL for room (or filter if API supports array)
+            # Simplest: Fetch all limit 100, client filter
+            # Logic Update: Now fetching today's queues with all statuses
+            url = f"{self.api_base}/queue_data.php?room={self.room_id}&limit=200" 
             r = requests.get(url, timeout=2)
             data = r.json()
             
             if data['success']:
-                items = []
-                for q in data['data']:
-                    # Filter client side just in case API doesn't filtering perfect
-                    if q['status'] == 'waiting':
-                        items.append(q)
+                wait = []
+                lab = []
+                xray = []
+                history = []
                 
-                # Update UI
-                self.root.after(0, lambda: self._update_list_ui(items))
+                for q in data['data']:
+                    st = q['status']
+                    if st == 'waiting': wait.append(q)
+                    elif st == 'lab': lab.append(q)
+                    elif st == 'xray': xray.append(q)
+                    
+                    # History includes 'completed', 'called', or any others
+                    # Also maybe duplicate 'called' in history if needed?
+                    # User requested "Every status". Let's put everything else in History, OR duplicate.
+                    # Usually history means "Done".
+                    
+                    if st in ['completed', 'called']:
+                        history.append(q)
+                
+                self.root.after(0, lambda: self._update_trees(wait, lab, xray, history))
         except: pass
 
-    def _update_list_ui(self, items):
+    def _update_trees(self, wait, lab, xray, history):
         if not hasattr(self, 'list_win') or not self.list_win.winfo_exists(): return
         
+        self._fill_tree(self.tree_waiting, wait)
+        self._fill_tree(self.tree_lab, lab)
+        self._fill_tree(self.tree_xray, xray)
+        self._fill_tree(self.tree_processed, history)
+
+    def _fill_tree(self, tree, items):
+        for i in tree.get_children():
+            tree.delete(i)
         for q in items:
-            self.tree.insert('', 'end', values=(
+            # Use ID as IID
+            tree.insert('', 'end', iid=q['id'], values=(
                 q.get('oqueue') or q.get('vn'),
                 q.get('patient_name'),
-                q.get('status')
+                q.get('status'),
+                'Double Click Call'
             ))
 
     def refresh_queue(self):
@@ -326,3 +429,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = MiniCallerApp(root)
     root.mainloop()
+

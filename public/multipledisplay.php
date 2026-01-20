@@ -58,7 +58,7 @@
     </script>
 </head>
 
-<body class="bg-gradient-to-br from-brand-900 via-slate-800 to-slate-900 min-h-screen text-white overflow-hidden">
+<body class="bg-slate-900 min-h-screen text-white overflow-hidden">
 
     <!-- Top Header -->
     <!-- Top Header -->
@@ -146,6 +146,18 @@
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
                         placeholder="e.g. Room 1-5">
                 </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-2 text-sm">Voice (Thai)</label>
+                    <div class="flex gap-2">
+                        <select id="input-voice"
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
+                            <option value="">Default</option>
+                        </select>
+                        <button onclick="testVoice()"
+                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl">Test</button>
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-end gap-3 mt-8">
@@ -191,34 +203,50 @@
     <!-- Main Content -->
     <main class="p-4 lg:p-8 h-[calc(100vh-140px)] grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
 
-        <!-- Left: Current Called (Focus) -->
-        <section class="lg:col-span-9 flex flex-col gap-4 h-full overflow-hidden">
-            <h2 class="text-xl md:text-2xl font-semibold flex items-center gap-2 text-brand-100 shrink-0">
-                <span class="w-2 h-8 bg-brand-500 rounded-full block"></span>
-                กำลังเรียก (Calling)
-            </h2>
-
-            <div id="current-called-container"
-                class="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 overflow-hidden pr-2 pb-20 content-start">
-                <!-- Dynamic Content Here -->
+        <!-- Main Content Grid -->
+        <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-40">
+            <!-- Combined Room Card + Waiting List Grid -->
+            <div id="room-grid" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 p-4">
+                <!-- Dynamic Content -->
             </div>
-        </section>
+        </div>
 
-        <!-- Right: Waiting List -->
-        <section
-            class="lg:col-span-3 flex flex-col gap-4 bg-black/20 rounded-3xl p-4 border border-white/5 h-full overflow-hidden">
-            <h2 class="text-xl md:text-2xl font-semibold text-brand-100 flex items-center gap-2 shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-400" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                รอเรียก
-            </h2>
-            <div id="waiting-list" class="flex flex-col gap-2 overflow-hidden h-full pr-1 pb-20">
-                <!-- Data -->
+        <!-- Bottom: Lab & X-Ray Status -->
+        <div
+            class="fixed bottom-0 left-0 right-0 h-32 bg-slate-900/95 border-t border-white/10 backdrop-blur-xl z-40 grid grid-cols-2 gap-px">
+
+            <!-- Lab Section -->
+            <div class="relative overflow-hidden group">
+                <div class="absolute inset-0 bg-indigo-900/20 group-hover:bg-indigo-900/30 transition"></div>
+                <div class="h-full flex items-center px-8 gap-6">
+                    <div class="flex flex-col justify-center shrink-0">
+                        <span class="text-indigo-400 font-bold text-sm tracking-widest uppercase">Laboratory</span>
+                        <h3 class="text-3xl font-bold text-white">รอ Lab</h3>
+                    </div>
+                    <div id="lab-list"
+                        class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
+                        <!-- Dynamic Items -->
+                        <div class="text-white/30 italic">No patients</div>
+                    </div>
+                </div>
             </div>
-        </section>
+
+            <!-- X-Ray Section -->
+            <div class="relative overflow-hidden group border-l border-white/10">
+                <div class="absolute inset-0 bg-fuchsia-900/20 group-hover:bg-fuchsia-900/30 transition"></div>
+                <div class="h-full flex items-center px-8 gap-6">
+                    <div class="flex flex-col justify-center shrink-0">
+                        <span class="text-fuchsia-400 font-bold text-sm tracking-widest uppercase">Radiology</span>
+                        <h3 class="text-3xl font-bold text-white">รอ X-Ray</h3>
+                    </div>
+                    <div id="xray-list"
+                        class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
+                        <!-- Dynamic Items -->
+                        <div class="text-white/30 italic">No patients</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -248,11 +276,15 @@
         const inputRoomFilter = document.getElementById('input-room-filter');
         const inputTtsPrefix = document.getElementById('input-tts-prefix');
         const inputTtsMiddle = document.getElementById('input-tts-middle');
+        const inputVoice = document.getElementById('input-voice');
 
         const deptOverlay = document.getElementById('dept-select-overlay');
         const deptListEl = document.getElementById('dept-selection-list');
-        const calledContainer = document.getElementById('current-called-container');
-        const waitingContainer = document.getElementById('waiting-list');
+
+        // Combined Container
+        const container = document.getElementById('room-grid');
+        const labListEl = document.getElementById('lab-list');
+        const xrayListEl = document.getElementById('xray-list');
 
         function openSettings() {
             modal.classList.remove('hidden');
@@ -268,6 +300,9 @@
 
             // Populate Room Filter based on current Dept
             updateRoomFilterOptions(currentDeptFilter, currentRoomFilter);
+
+            // Force refresh voice list
+            loadVoices();
         }
 
         function closeSettings() {
@@ -286,11 +321,13 @@
             currentRoomFilter = inputRoomFilter.value;
             ttsPrefix = inputTtsPrefix.value || 'ขอเชิญหมายเลข';
             ttsMiddle = inputTtsMiddle.value || 'ที่ห้องตรวจ';
+            const selectedVoice = inputVoice.value;
 
             localStorage.setItem('dept_filter', currentDeptFilter);
             localStorage.setItem('room_filter', currentRoomFilter);
             localStorage.setItem('tts_prefix', ttsPrefix);
             localStorage.setItem('tts_middle', ttsMiddle);
+            localStorage.setItem('tts_voice', selectedVoice);
 
             // 2. Apply Titles (Client side override or just re-fetch if we had a backend save)
             // For now, let's trust the inputs for immediate feedback
@@ -427,7 +464,12 @@
             try {
                 let url = 'api/queue_data.php?limit=50'; // Fetch more so we can carousel
                 if (currentDeptFilter) {
+                    // We need ALL queues for Lab/Xray too, not just filtered ones?
+                    // But if this board is for Dept A, maybe we only show Lab/Xray for Dept A?
+                    // Let's assume dashboard shows everything related to filtered Dept.
                     url += `&department=${encodeURIComponent(currentDeptFilter)}`;
+                } else {
+                    // If 'Show All', we just fetch all
                 }
 
                 const res = await fetch(url);
@@ -438,12 +480,27 @@
                     processAndRender();
 
                     // Trigger TTS check (only for active calls)
+                    // Trigger TTS check (only for active calls)
                     const called = allQueues.filter(q => q.status === 'called');
                     if (called.length > 0) {
-                        const maxIdItem = called.reduce((prev, current) => (prev.id > current.id) ? prev : current);
-                        if (window.lastCalledId !== maxIdItem.id) {
-                            window.lastCalledId = maxIdItem.id;
-                            speakQueue(maxIdItem);
+                        // FIX: Use updated_at to find the *latest* call event, ensuring Recalls work.
+                        // Fallback to 'created_at' or 'id' if updated_at is null (though DB default has it)
+                        const latest = called.reduce((prev, current) => {
+                            const prevTime = new Date(prev.updated_at || prev.created_at).getTime();
+                            const currTime = new Date(current.updated_at || current.created_at).getTime();
+                            return (prevTime > currTime) ? prev : current;
+                        });
+
+                        // We track by composite ID+Time to ensure we speak if same ID is Updated
+                        // Actually, tracking "Last Spoken Timestamp" is safer?
+                        // But let's check if the ID+Time changed from last known.
+
+                        const latestTime = new Date(latest.updated_at || latest.created_at).getTime();
+                        const uniqueKey = `${latest.id}_${latestTime}`;
+
+                        if (window.lastCalledKey !== uniqueKey) {
+                            window.lastCalledKey = uniqueKey;
+                            speakQueue(latest);
                         }
                     }
                 }
@@ -454,11 +511,38 @@
 
         function maskName(fullName) {
             if (!fullName) return '';
-            const parts = fullName.trim().split(/\s+/);
-            if (parts.length > 1) {
-                return `${parts[0]} xxx`;
+
+            // ฟังก์ชันย่อยสำหรับ Mask ข้อความ (เก็บ 2 ตัวหน้า ส่วนที่เหลือเปลี่ยนเป็น x)
+            const maskText = (text) => {
+                if (!text || text.length <= 2) return text; // ถ้าสั้นเกินไป ไม่ต้อง mask
+                return text.substring(0, 2) + 'x'.repeat(text.length - 2);
+            };
+
+            // 1. แยกชื่อ และ นามสกุล ออกจากกันด้วยช่องว่าง
+            const parts = fullName.split(' ');
+            let firstName = parts[0];
+            let lastName = parts.slice(1).join(' '); // นามสกุล (เผื่อมีเว้นวรรคหลายขยัก)
+
+            // 2. จัดการส่วนชื่อจริง (ตรวจสอบคำนำหน้าชื่อที่มีจุด เช่น นาย. หรือ น.ส.)
+            if (firstName.includes('.')) {
+                const dotIndex = firstName.lastIndexOf('.'); // หาตำแหน่งจุดสุดท้าย
+                const prefix = firstName.substring(0, dotIndex + 1); // เก็บคำนำหน้า (เช่น "นาย.")
+                const realName = firstName.substring(dotIndex + 1);  // เก็บชื่อจริง (เช่น "กกกก")
+
+                // ประกอบร่าง: คำนำหน้า + ชื่อที่ mask แล้ว
+                firstName = prefix + maskText(realName);
+            } else {
+                // กรณีไม่มีคำนำหน้าแบบมีจุด
+                firstName = maskText(firstName);
             }
-            return fullName;
+
+            // 3. จัดการนามสกุล (ถ้ามี)
+            if (lastName) {
+                lastName = maskText(lastName);
+                return `${firstName} ${lastName}`;
+            }
+
+            return firstName;
         }
 
         // Logic to Merge Rooms + Queues and Render Pages
@@ -467,12 +551,42 @@
             // Map ALL ROOMS. If a room has an active call, use it. Else Idle.
             const roomCards = allRooms.map(room => {
                 const activeCall = allQueues.find(q => q.status === 'called' && String(q.room_number) === String(room.id));
-                if (activeCall) {
-                    // Check Blink
-                    const lastTime = lastCallTimes[room.id] || 0;
-                    const isBlinking = (Date.now() - lastTime) < 10000; // 10 seconds
+                const waitingForThisRoom = allQueues.filter(q => q.status === 'waiting' && String(q.room_number) === String(room.id));
+                const totalWaiting = waitingForThisRoom.length;
+                const next5 = waitingForThisRoom.slice(0, 5);
 
-                    // Styles based on state
+                const waitingHtml = next5.length > 0 ? `
+                    <div class="mt-4 w-full bg-slate-900/50 rounded-xl p-3 border border-white/5 backdrop-blur-sm">
+                        <div class="flex justify-between items-center mb-2 px-1">
+                             <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">รอเรียก (${totalWaiting})</span>
+                             </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            ${next5.map(q => `
+                                <div class="flex justify-between items-center text-sm bg-white/5 hover:bg-white/10 transition px-3 py-2 rounded-lg border border-white/5">
+                                    <span class="font-mono font-bold text-white text-lg">${q.oqueue || q.vn}</span>
+                                    <span class="text-slate-400 text-xs">${maskName(q.patient_name)}</span>
+                                </div>
+                            `).join('')}
+                             ${totalWaiting > 5 ? `<div class="text-center text-xs text-slate-500 pt-2 font-medium">+${totalWaiting - 5} more</div>` : ''}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="mt-4 w-full bg-slate-900/30 rounded-xl p-4 border border-white/5 text-center">
+                         <span class="text-xs font-semibold text-slate-500">No Queue</span>
+                    </div>
+                `;
+
+                // WRAPPER DIV for Card + Waiting List
+                // We return the whole markup for this grid Item
+                let cardContent = '';
+
+                if (activeCall) {
+                    // Active Card Logic
+                    const lastTime = lastCallTimes[room.id] || 0;
+                    const isBlinking = (Date.now() - lastTime) < 10000;
                     const containerClass = isBlinking
                         ? "bg-yellow-400 border-yellow-200 shadow-yellow-500/50 animate-pulse text-slate-900"
                         : "bg-gradient-to-br from-emerald-500 to-teal-700 border-white/20 shadow-emerald-500/40 text-white";
@@ -481,133 +595,92 @@
                     const vnClass = isBlinking ? "text-black" : "text-white";
                     const nameBgClass = isBlinking ? "bg-black/10" : "bg-black/20";
                     const nameTextClass = isBlinking ? "text-slate-900" : "text-white";
-                    const decorClass = isBlinking ? "bg-white/20" : "bg-white/10";
 
-                    // Active Card
-                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return ''; // Skip if filtered out
-
-                    return `
-                        <div class="relative overflow-hidden rounded-3xl ${containerClass} p-6 flex flex-col items-center justify-center text-center shadow-2xl border-4 transition-transform hover:scale-105">
-                             <!-- Decorative Circle bg -->
-                             <div class="absolute -top-10 -right-10 w-32 h-32 ${decorClass} rounded-full blur-2xl"></div>
+                    cardContent = `
+                        <div class="relative overflow-hidden rounded-3xl ${containerClass} p-4 flex flex-col items-center justify-between text-center shadow-lg border-4 min-h-[300px]">
+                             <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                              
-                             <span class="text-3xl font-bold uppercase tracking-wider mb-2 drop-shadow-sm ${titleClass}">ห้องตรวจ ${room.room_name}</span>
-                             
-                             <h3 class="text-8xl font-black tracking-tighter my-2 drop-shadow-lg leading-none ${vnClass}">
-                                ${activeCall.oqueue || activeCall.vn}
-                             </h3>
-                             
-                             <div class="mt-4 ${nameBgClass} rounded-full px-6 py-2 backdrop-blur-sm">
-                                <p class="text-2xl font-medium truncate max-w-[200px] ${nameTextClass}">${maskName(activeCall.patient_name)}</p>
+                             <div class="flex-1 flex flex-col justify-center items-center w-full z-10">
+                                <span class="text-xl font-bold uppercase tracking-wider mb-2 opacity-90 ${titleClass}">ห้องตรวจ ${room.room_name}</span>
+                                <h3 class="text-7xl font-black tracking-tighter my-2 leading-none ${vnClass}">${activeCall.oqueue || activeCall.vn}</h3>
+                                <div class="mt-2 ${nameBgClass} rounded-full px-4 py-1.5 backdrop-blur-sm max-w-full">
+                                    <p class="text-lg font-medium truncate ${nameTextClass}">${maskName(activeCall.patient_name)}</p>
+                                </div>
                              </div>
                         </div>
                     `;
                 } else {
-                    // Idle (Grey) - Compact Design
-                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return ''; // Skip if filtered out
+                    // Idle Card Logic
+                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
 
-                    return `
-                        <div class="bg-slate-800/40 p-4 rounded-2xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-60 grayscale hover:opacity-80 transition-opacity">
-                            <span class="text-xl text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
-                            <h3 class="text-5xl font-bold text-slate-600 tracking-tight my-2">ว่าง</h3>
-                            <p class="text-sm text-slate-600 truncate">รอเรียก...</p>
+                    cardContent = `
+                        <div class="bg-slate-800/60 p-4 rounded-3xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-75 min-h-[300px]">
+                            <span class="text-lg text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
+                            <h3 class="text-5xl font-bold text-slate-600 tracking-tight my-4">ว่าง</h3>
+                            <p class="text-sm text-slate-500 truncate">รอเรียก...</p>
                         </div>
                     `;
                 }
+
+                // Filtering Check
+                if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
+
+                // Combine Card + Separated Waiting List
+                return `
+                    <div class="flex flex-col gap-3">
+                        ${cardContent}
+                        ${waitingHtml}
+                    </div>
+                `;
             });
 
-            // 2. Prepare Waiting List
-            const waitingItems = allQueues.filter(q => q.status === 'waiting').map(q => `
-                <div class="bg-white/5 p-3 rounded-xl flex justify-between items-center border border-white/5">
-                    <div>
-                        <span class="text-xl font-bold text-white block">${q.oqueue || q.vn}</span>
-                        <div class="text-xs text-white/50 truncate max-w-[120px]">${maskName(q.patient_name)}</div>
-                    </div>
-                    <span class="text-sm bg-brand-500/20 text-brand-300 px-2 py-1 rounded-lg">ห้อง ${q.room_number}</span>
-                </div>
-            `);
-
             // 3. Render Current Page
-            renderPagination(roomCards, waitingItems);
+            renderPagination(roomCards);
         }
 
         // Scroll State
         let marqueeInterval;
         let lastWaitingData = ''; // To prevent re-rendering and jumpiness
 
-        function renderPagination(roomCards, waitingItems) {
-            // Called Section - Keep Pagination (Cards)
+        function renderPagination(roomCards) {
+            // New Layout: We don't have a separate marquee list anymore.
+            // But we still have pagination for rooms if many rooms?
+
             const totalCalledPages = Math.ceil(roomCards.length / CALLED_PAGE_SIZE) || 1;
             if (calledPage >= totalCalledPages) calledPage = 0;
             const startC = calledPage * CALLED_PAGE_SIZE;
             const currentRooms = roomCards.slice(startC, startC + CALLED_PAGE_SIZE);
 
-            // Always update Called Container to reflect real-time status changes (Idle -> Active)
-            calledContainer.innerHTML = currentRooms.join('') || `
+            container.innerHTML = currentRooms.join('') || `
                 <div class="col-span-full h-40 flex items-center justify-center text-white/20 text-xl font-bold border-2 border-dashed border-white/10 rounded-3xl">Loading Rooms...</div>
             `;
 
-            // Waiting Section - MARQUEE SCROLL
-            // Only update DOM if data CHANGED
-            const currentDataStr = JSON.stringify(waitingItems);
-            if (currentDataStr === lastWaitingData) {
-                return; // Data hasn't changed, let it scroll!
-            }
-            lastWaitingData = currentDataStr;
-
-            // Stop any existing marquee
-            stopMarquee();
-
-            // Render ALL items
-            if (waitingItems.length === 0) {
-                waitingContainer.innerHTML = '<div class="text-center text-white/30 py-4">ไม่มีคิวรอ</div>';
-                return;
-            }
-
-            // Render content normally first to check height
-            waitingContainer.innerHTML = waitingItems.join('');
-
-            // Allow DOM to update then check height
-            setTimeout(() => {
-                if (waitingContainer.scrollHeight > waitingContainer.clientHeight) {
-                    // Overflow: Enable Marquee
-                    const content = waitingContainer.innerHTML;
-                    // Create a wrapper for smooth movement
-                    waitingContainer.innerHTML = `
-                        <div class="marquee-content flex flex-col gap-2">
-                            ${content}
-                            <!-- Duplicate for loop -->
-                            ${content}
-                        </div>
-                     `;
-                    startMarquee();
-                } else {
-                    // No overflow, just leave as is
-                }
-            }, 100);
+            // Render Lab/Xray
+            renderLabXray();
         }
 
+        function renderLabXray() {
+            const labs = allQueues.filter(q => q.status === 'lab');
+            const xrays = allQueues.filter(q => q.status === 'xray');
+
+            const makeItem = (q, bg) => `
+                <div class="flex flex-col items-center justify-center bg-white/10 px-6 py-3 rounded-2xl min-w-[140px] border border-white/10 shadow-lg animate-pulse-slow">
+                     <span class="text-2xl font-black text-white">${q.oqueue || q.vn}</span>
+                     <span class="text-xs text-white/60 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                </div>
+            `;
+
+            labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
+            xrayListEl.innerHTML = xrays.length ? xrays.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
+        }
+
+
         function startMarquee() {
-            stopMarquee(); // clear old
-            const el = waitingContainer.querySelector('.marquee-content');
-            if (!el) return;
-
-            let pos = 0;
-            function step() {
-                pos += 0.5; // Speed
-                const singleHeight = el.scrollHeight / 2;
-
-                if (pos >= singleHeight) {
-                    pos = 0; // seamless reset
-                }
-                el.style.transform = `translateY(-${pos}px)`;
-                marqueeInterval = requestAnimationFrame(step);
-            }
-            marqueeInterval = requestAnimationFrame(step);
+            // Deprecated
         }
 
         function stopMarquee() {
-            if (marqueeInterval) cancelAnimationFrame(marqueeInterval);
+            // Deprecated
         }
 
         // Sound State
@@ -633,8 +706,13 @@
 
         function speakQueue(item) {
             console.log("Queueing TTS:", item); // DEBUG
+
+            // Reload settings from localStorage to ensure we have the absolute latest values
+            const currentPrefix = localStorage.getItem('tts_prefix') || 'ขอเชิญหมายเลข';
+            const currentMiddle = localStorage.getItem('tts_middle') || 'ที่ห้องตรวจ';
+
             // "ขอเชิญหมายเลข ... ที่ห้อง ... ค่ะ"
-            const text = `${ttsPrefix} ${item.oqueue || item.vn} ${ttsMiddle} ${item.room_number}ครับ`;
+            const text = `${currentPrefix} ${item.oqueue || item.vn} ${currentMiddle} ${item.room_number}`;
 
             // Mark time for blinking effect
             lastCallTimes[item.room_number] = Date.now();
@@ -674,16 +752,28 @@
             utterance.rate = 1.0;
             utterance.pitch = 1.2;
 
+            // Re-fetch voices to ensure we have the latest list (Chrome idiosyncrasy)
             const voices = window.speechSynthesis.getVoices();
-            console.log("Available Voices:", voices.length); // DEBUG
+            console.log("Available Voices during speak:", voices.length); // DEBUG
 
-            const thaiVoice = voices.find(v => v.lang.includes('th') && (v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya'))) || voices.find(v => v.lang.includes('th'));
+            let thaiVoice = voices.find(v => v.lang.includes('th') && (v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya')));
+            if (!thaiVoice) thaiVoice = voices.find(v => v.lang.includes('th'));
 
             if (thaiVoice) {
-                console.log("Selected Voice:", thaiVoice.name); // DEBUG
+                // Default fallback
                 utterance.voice = thaiVoice;
-            } else {
-                console.warn("No Thai Voice Found!"); // DEBUG
+            }
+
+            // Override with user selection if exists and valid
+            const savedVoiceURI = localStorage.getItem('tts_voice');
+            if (savedVoiceURI) {
+                const specificVoice = voices.find(v => v.voiceURI === savedVoiceURI);
+                if (specificVoice) {
+                    utterance.voice = specificVoice;
+                    console.log("Using Saved Voice:", specificVoice.name);
+                } else {
+                    console.warn("Saved voice not found in current list, using default");
+                }
             }
 
             utterance.onend = function () {
@@ -702,9 +792,52 @@
         }
 
         // Initialize voices
-        window.speechSynthesis.onvoiceschanged = () => {
-            console.log("Voices Changed/Loaded: " + window.speechSynthesis.getVoices().length);
-        };
+        let availableVoices = [];
+
+        function loadVoices() {
+            const all = window.speechSynthesis.getVoices();
+            if (all.length > 0) {
+                availableVoices = all;
+                console.log("Voices Loaded via function: " + availableVoices.length);
+                populateVoiceList();
+            }
+        }
+
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+
+        // Try loading immediately as well (for browsers where voices are ready)
+        loadVoices();
+
+        // Polling fallback if voices are stuck
+        let voiceInterval = setInterval(() => {
+            if (availableVoices.length === 0) {
+                loadVoices();
+            } else {
+                clearInterval(voiceInterval);
+            }
+        }, 1000);
+
+        function populateVoiceList() {
+            const thaiVoices = availableVoices.filter(v => v.lang.includes('th'));
+            const saved = localStorage.getItem('tts_voice');
+
+            inputVoice.innerHTML = '<option value="">Default (Auto)</option>' +
+                thaiVoices.map(v => `<option value="${v.voiceURI}" ${v.voiceURI === saved ? 'selected' : ''}>${v.name}</option>`).join('');
+
+            // Also add common English ones if no Thai found? No, user requested Thai.
+        }
+
+        function testVoice() {
+            const uri = inputVoice.value;
+            const text = "ทดสอบเสียงค่ะ 1 2 3";
+            const ut = new SpeechSynthesisUtterance(text);
+            ut.lang = 'th-TH';
+            if (uri) {
+                const v = availableVoices.find(x => x.voiceURI === uri);
+                if (v) ut.voice = v;
+            }
+            window.speechSynthesis.speak(ut);
+        }
 
         // WebSocket Connection
         function connectWS() {

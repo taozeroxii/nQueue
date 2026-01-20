@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS queues (
     INDEX (status),
     INDEX (created_at)
 );
+
+ALTER TABLE queues MODIFY COLUMN status ENUM('waiting', 'called', 'completed', 'lab', 'xray') DEFAULT 'waiting';

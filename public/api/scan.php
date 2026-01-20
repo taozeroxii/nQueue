@@ -58,7 +58,7 @@ try {
 
                 $patientData = [
                     'oqueue' => $row['oqueue'],
-                    'patient_name' => trim(($row['pname'] ?? '') . ($row['fname'] ?? '') . ' ' . ($row['lname'] ?? '')),
+                    'patient_name' => trim(($row['fname'] ?? '') . ' ' . ($row['lname'] ?? '')),
                     'hn' => $row['hn']
                 ];
             }

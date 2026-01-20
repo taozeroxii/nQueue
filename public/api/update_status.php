@@ -48,6 +48,39 @@ try {
         } else {
             echo json_encode(['success' => false, 'message' => 'No waiting patients']);
         }
+    } elseif ($input && isset($input['action']) && $input['action'] === 'call_specific' && $id) {
+        // CALL SPECIFIC ID (Recall from Lab/Xray or Ticket List)
+        // 1. Complete currently called for this room (if any)
+        if ($room) {
+            $completeSql = "UPDATE queues SET status = 'completed' WHERE room_number = :room AND status = 'called'";
+            $cStmt = $mysql->prepare($completeSql);
+            $cStmt->execute([':room' => $room]);
+        } else {
+            // If room not provided, we might fail to auto-complete the previous one. 
+            // Ideally client sends room.
+        }
+
+        // 2. Set specific ID to called
+        $updateSql = "UPDATE queues SET status = 'called' WHERE id = :id";
+        $uStmt = $mysql->prepare($updateSql);
+        $uStmt->execute([':id' => $id]);
+
+        // 3. Notify
+        // Fetch room if missing
+        if (!$room) {
+            $rStmt = $mysql->prepare("SELECT room_number FROM queues WHERE id = :id");
+            $rStmt->execute([':id' => $id]);
+            $rData = $rStmt->fetch();
+            $room = $rData ? $rData['room_number'] : null;
+        }
+
+        if ($room) {
+            (new \App\Notifier())->notify(['event' => 'queue_update', 'room' => $room]);
+            // Also trigger sound? The dashboard monitors 'called' status change.
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Called specific patient']);
+
     } elseif ($input && isset($input['action']) && $input['action'] === 'recall' && $room) {
         // Recall Logic: Find currently called patient and re-broadcast
         $sql = "SELECT * FROM queues WHERE room_number = :room AND status = 'called' LIMIT 1";
