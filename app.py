@@ -15,7 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Database configuration
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': '172.16.0.251',
     'database': 'nqueue',
     'user': 'root',
     'password': '',

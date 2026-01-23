@@ -882,7 +882,7 @@
 
         // WebSocket Connection
         function connectWS() {
-            const socket = new WebSocket('ws://localhost:8765');
+            const socket = new WebSocket('ws://172.16.0.251:8765');
             socket.onopen = function () {
                 console.log('Connected');
                 document.body.style.borderTop = "4px solid #10b981";
