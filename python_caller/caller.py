@@ -9,9 +9,9 @@ import websockets
 
 # --- Premium Configuration & Theme ---
 DEFAULT_CONFIG = {
-    'api_url': "http://172.16.0.251/nQueue/public/api/update_status.php",
-    'ws_url': "ws://172.16.0.251:8765",
-    'api_base': "http://172.16.0.251/nQueue/public/api", 
+    'api_url': "http://localhost/nQueue/public/api/update_status.php",
+    'ws_url': "ws://localhost:8765",
+    'api_base': "http://localhost/nQueue/public/api", 
     'room_id': 1
 }
 
@@ -43,7 +43,7 @@ class MiniCallerApp:
         
         self.config = self.load_config()
         self.room_id = self.config.get('room_id', 1)
-        self.api_base = self.config.get('api_base', "http://172.16.0.251/nQueue/public/api")
+        self.api_base = self.config.get('api_base', "http://localhost/nQueue/public/api")
         
         self.setup_styles()
         self.create_ui()

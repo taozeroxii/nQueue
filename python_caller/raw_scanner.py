@@ -133,7 +133,7 @@ _setup_apis()
 
 # Config
 DEFAULT_CONFIG = {
-    'api_base': "http://172.16.0.251/nQueue/public/api",
+    'api_base': "http://localhost/nQueue/public/api",
     'device_map': {}, # "handle_str": room_id
     'last_dept': ''
 }
@@ -147,7 +147,7 @@ class RawScannerApp:
         
         self.config = self.load_config()
         self.device_map = self.config.get('device_map', {})
-        self.api_base = self.config.get('api_base', "http://172.16.0.251/nQueue/public/api")
+        self.api_base = self.config.get('api_base', "http://localhost/nQueue/public/api")
         
         self.buffer_map = {} # handle -> string buffer
         

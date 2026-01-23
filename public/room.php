@@ -206,7 +206,7 @@ $room = $_GET['room'] ?? 1; // Default to room 1
 
         // WebSocket
         function connectWS() {
-            const socket = new WebSocket('ws://172.16.0.251:8765');
+            const socket = new WebSocket('ws://localhost:8765');
             socket.onopen = () => console.log('Room Connected');
             socket.onmessage = (e) => {
                 console.log('Update', e.data);
