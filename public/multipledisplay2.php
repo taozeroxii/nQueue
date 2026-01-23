@@ -692,6 +692,7 @@
                 });
             });
         }
+
         function getThaiNumberFiles(num) {
             const files = [];
 
@@ -718,25 +719,43 @@
                 const tens = Math.floor(num / 10);
                 const ones = num % 10;
 
-                // สิบ
-                files.push('Prompt4/Prompt4_10.wav');
+                if (tens === 1) {
+                    // 10–19 (Sip ...)
+                    files.push('Prompt4/Prompt4_10.wav');
 
-                // สิบเอ็ด
+                    if (ones === 1) {
+                        files.push('Prompt4/Prompt4_11-1.wav'); // สิบเอ็ด (Sip Et)
+                    } else if (ones > 1) {
+                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    }
+                    return files;
+                }
+
+                if (tens === 2) {
+                    // 20–29 (Yi Sip ...)
+                    files.push('Prompt4/Prompt4_20.wav'); // Yi Sip
+
+                    if (ones === 1) {
+                        files.push('Prompt4/Prompt4_11-1.wav'); // Yi Sip Et
+                    } else if (ones > 1) {
+                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    }
+                    return files;
+                }
+
+                // 30-90 (Sam Sip, Si Sip, ...)
+                files.push(`Prompt4/Prompt4_${tens}.wav`); // digit (3, 4, 5...)
+                files.push('Prompt4/Prompt4_10.wav'); // Sip
+
                 if (ones === 1) {
-                    files.push('Prompt4/Prompt4_11-1.wav');
-                    return files;
-                }
-
-                // สิบสอง - สิบเก้า
-                if (ones > 1) {
+                    files.push('Prompt4/Prompt4_11-1.wav'); // Et
+                } else if (ones > 1) {
                     files.push(`Prompt4/Prompt4_${ones}.wav`);
-                    return files;
                 }
-
                 return files;
             }
 
-            // Ones only
+            // Ones only (1-9)
             if (num > 0) {
                 files.push(`Prompt4/Prompt4_${num}.wav`);
             }
