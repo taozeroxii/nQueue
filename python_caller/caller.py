@@ -265,10 +265,8 @@ class MiniCallerApp:
             menu.add_command(label="☢ Send to X-ray", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'xray')).start())
             menu.tk_popup(event.x_root, event.y_root)
         else:
-             # Default Call for other lists (or maybe nothing?)
-             # Let's keep call for others for now, or just return
-             if type_key != 'history':
-                threading.Thread(target=lambda: self._call_specific(db_id)).start()
+             # Allow calling from history (Recall) and other lists
+             threading.Thread(target=lambda: self._call_specific(db_id)).start()
 
     def _call_specific(self, db_id):
         try:

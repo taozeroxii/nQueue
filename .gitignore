@@ -9,3 +9,5 @@ __pycache__/
 .idea/
 .DS_Store
 node_modules/
+python_caller/build/
+python_caller/dist

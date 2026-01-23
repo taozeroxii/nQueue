@@ -1,4 +1,14 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
+use App\Database;
+
+$db = new Database();
+$mysql = $db->getMySQL();
+
+// Fetch Rooms
+$stmt = $mysql->query("SELECT id, room_name FROM rooms ORDER BY room_name ASC");
+$rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 $room = $_GET['room'] ?? 1;
 ?>
 <!DOCTYPE html>
@@ -7,9 +17,7 @@ $room = $_GET['room'] ?? 1;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk - Room
-        <?php echo $room; ?>
-    </title>
+    <title>Kiosk - Room <?php echo $room; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -24,6 +32,16 @@ $room = $_GET['room'] ?? 1;
             background: #ef4444;
             box-shadow: 0 0 10px #ef4444;
             animation: scan 2s linear infinite;
+        }
+
+        /* Hide scrollbar for room tabs */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
         @keyframes scan {
@@ -50,19 +68,22 @@ $room = $_GET['room'] ?? 1;
 
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
 
+    <!-- Room Tabs -->
     <div
-        class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border-t-8 border-indigo-600 relative overflow-hidden">
+        class="fixed top-0 left-0 right-0 p-4 z-50 overflow-x-auto whitespace-nowrap bg-white/80 backdrop-blur shadow-sm no-scrollbar flex space-x-2 justify-center">
+        <?php foreach ($rooms as $r): ?>
+            <?php $isActive = ($r['id'] == $room); ?>
+            <a href="?room=<?php echo $r['id']; ?>"
+                class="px-6 py-2 rounded-full font-bold transition-all transform hover:scale-105 <?php echo $isActive ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-indigo-50 border border-gray-200'; ?>">
+                <?php echo htmlspecialchars($r['room_name']); ?>
+            </a>
+        <?php endforeach; ?>
+    </div>
 
-        <!-- Config Button -->
-        <button onclick="changeRoom()" class="absolute top-4 right-4 text-gray-300 hover:text-indigo-600 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        </button>
+    <!-- Main Content (Adjusted Margin) -->
+    <div
+        class="mt-20 bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border-t-8 border-indigo-600 relative overflow-hidden">
+
 
         <div class="mb-8">
             <div class="w-32 h-32 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 relative">
@@ -142,7 +163,7 @@ $room = $_GET['room'] ?? 1;
                 const res = await fetch('api/readq.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `vn=${encodeURIComponent(vn)}&room=${room}`
+                    body: `oqueue=${encodeURIComponent(vn)}&room=${room}`
                 });
 
                 const data = await res.json();
@@ -155,7 +176,6 @@ $room = $_GET['room'] ?? 1;
                         html: `<div class="text-left bg-gray-50 p-4 rounded-lg text-sm">
                                 <p><strong>Queue:</strong> <span class="text-xl text-indigo-600 font-bold">${data.data.oqueue || 'N/A'}</span></p>
                                 <p><strong>Name:</strong> ${data.data.patient_name}</p>
-                                <p><strong>VN:</strong> ${vn}</p>
                                </div>`,
                         timer: 2000,
                         showConfirmButton: false

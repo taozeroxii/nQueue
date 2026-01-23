@@ -121,6 +121,50 @@ php ws_server.php
 
 ---
 
-## 📜 ลิขสิทธิ์
+## Python Version (แปลงจาก PHP)
+
+### คุณสมบัติเพิ่มเติมใน Python Version
+
+*   **Google Translate TTS**: เรียกคิวด้วยเสียงผู้หญิงภาษาไทยจาก Google Translate API
+*   **Flask Framework**: ใช้ Flask พร้อม SocketIO สำหรับ real-time updates
+*   **Improved Performance**: การทำงานที่เร็วขึ้นและใช้ทรัพยากรน้อยลง
+*   **Better Error Handling**: ระบบจัดการข้อผิดพลาดที่ดีขึ้น
+
+### การติดตั้ง Python Version
+
+1. ติดตั้ง Python Dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+2. ตั้งค่า Database ใน `app.py`:
+    ```python
+    DB_CONFIG = {
+        'host': 'localhost',
+        'database': 'nqueue',
+        'user': 'root',
+        'password': '',
+        'port': 3306
+    }
+    ```
+
+3. เริ่มต้น Python Server:
+    ```bash
+    python app.py
+    ```
+
+4. เข้าใช้งานที่: `http://localhost:5000`
+
+### API Endpoints ของ Python Version
+
+- `GET /api/departments` - ดึงรายชื่อแผนกทั้งหมด
+- `GET /api/rooms?department=<dept>` - ดึงรายชื่อห้องตรวจ
+- `GET /api/queue_data?limit=<limit>&department=<dept>` - ดึงข้อมูลคิว
+- `GET /api/settings` - ดึงการตั้งค่า
+- `GET /api/tts_url?text=<text>` - สร้าง URL สำหรับ Google TTS
+
+---
+
+## ลิขสิทธิ์
 
 สำหรับใช้งานภายในหน่วยงาน (Hospital / Clinic Internal Use)
