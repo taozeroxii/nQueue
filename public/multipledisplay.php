@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Queue Board</title>
+    <title>Main Queue Board (Prompt4)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -109,20 +109,11 @@
                         placeholder="e.g. แผนกอายุรกรรม">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-slate-400 mb-2 text-sm">TTS Prefix</label>
-                        <input type="text" id="input-tts-prefix"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
-                            placeholder="default: ขอเชิญหมายเลข">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-2 text-sm">TTS Middle</label>
-                        <input type="text" id="input-tts-middle"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
-                            placeholder="default: ที่ห้องตรวจ">
-                    </div>
+                <!-- NOTE: TTS Prefix/Middle removed/disabled for File-mode as it uses fixed files -->
+                <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
+                    <p class="text-xs text-slate-400 text-center">Note: This display uses File-based Audio (Prompt4)</p>
                 </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-slate-400 mb-2 text-sm">Filter by Department</label>
@@ -148,22 +139,29 @@
                 </div>
 
                 <div>
-                    <label class="block text-slate-400 mb-2 text-sm">Voice (Thai)</label>
-                    <div class="flex gap-2">
-                        <select id="input-voice"
-                            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
-                            <option value="">Default</option>
-                        </select>
-                        <button onclick="testVoice()"
-                            class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl">Test</button>
-                    </div>
-                </div>
-
-                <div>
                     <label class="block text-slate-400 mb-2 text-sm">Call Repetitions</label>
                     <input type="number" id="input-tts-repeat" min="1" max="5"
                         class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
                         placeholder="Default: 1">
+                </div>
+
+                <div class="border-t border-slate-700 pt-4 mt-4">
+                    <h3 class="text-white font-semibold mb-3">Connection Settings</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-slate-400 mb-2 text-sm">API Base URL</label>
+                            <input type="text" id="input-api-base"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                                placeholder="e.g. http://localhost/nQueue/public/">
+                            <p class="text-xs text-slate-500 mt-1">Leave empty for relative path (default)</p>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-2 text-sm">WebSocket URL</label>
+                            <input type="text" id="input-ws-url"
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                                placeholder="e.g. ws://localhost:8765">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -192,16 +190,58 @@
         <p class="text-slate-400">Browser policy requires interaction to play audio</p>
     </div>
 
+    <!-- Kiosk Auto-Init Script -->
+    <script>
+        // Check URL param or default kiosk behavior
+        const urlParams = new URLSearchParams(window.location.search);
+
+        function tryAutoUnlock() {
+            if (audioUnlocked) return;
+            console.log("Attempting Auto-Unlock Audio...");
+
+            // Try to speak a silent char/play silent audio to trigger unlock
+            // With File Audio, we should try to play an empty buffer or a silent file if we had one
+            // Or just a tiny part of a file known to exist
+            const a = new Audio("Prompt4/Prompt4_Number.wav");
+            a.volume = 0;
+            a.play().then(() => {
+                a.pause();
+                audioUnlocked = true;
+                const overlay = document.getElementById('sound-overlay');
+                if (overlay) overlay.classList.add('hidden');
+                console.log("Auto-Unlock Successful!");
+            }).catch(e => console.log("Auto-Unlock failed (user interaction might be needed)"));
+        }
+
+        window.addEventListener('load', () => {
+            tryAutoUnlock();
+            // Retry once after a short delay just in case
+            setTimeout(tryAutoUnlock, 1000);
+
+            // Attempt Fullscreen
+            if (urlParams.has('kiosk')) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    console.log("Auto-FS failed", e);
+                });
+            }
+        });
+
+        // Additional listener for first click to ensure FS if failed
+        document.addEventListener('click', () => {
+            if (urlParams.has('kiosk') && !document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => { });
+            }
+        }, { once: true });
+    </script>
+
     <!-- Initial Department Selection Overlay -->
     <div id="dept-select-overlay" class="fixed inset-0 bg-slate-900 z-[60] hidden flex-col items-center justify-center">
         <div class="text-center max-w-md w-full p-6">
             <h1 class="text-4xl font-bold text-white mb-2">Welcome</h1>
             <p class="text-slate-400 mb-8">Please select a department to display</p>
-
             <div id="dept-selection-list" class="flex flex-col gap-3">
                 <!-- Buttons injected here -->
             </div>
-
             <button onclick="selectDept('')" class="mt-6 text-slate-500 hover:text-white underline text-sm">Show All
                 Departments</button>
         </div>
@@ -209,7 +249,6 @@
 
     <!-- Main Content -->
     <main class="p-4 lg:p-8 h-[calc(100vh-140px)] grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
-
         <!-- Main Content Grid -->
         <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-40">
             <!-- Combined Room Card + Waiting List Grid -->
@@ -221,7 +260,6 @@
         <!-- Bottom: Lab & X-Ray Status -->
         <div
             class="fixed bottom-0 left-0 right-0 h-32 bg-slate-900/95 border-t border-white/10 backdrop-blur-xl z-40 grid grid-cols-2 gap-px">
-
             <!-- Lab Section -->
             <div class="relative overflow-hidden group">
                 <div class="absolute inset-0 bg-indigo-900/20 group-hover:bg-indigo-900/30 transition"></div>
@@ -237,7 +275,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- X-Ray Section -->
             <div class="relative overflow-hidden group border-l border-white/10">
                 <div class="absolute inset-0 bg-fuchsia-900/20 group-hover:bg-fuchsia-900/30 transition"></div>
@@ -258,20 +295,29 @@
 
     <script>
         // State
-        let currentDeptFilter = localStorage.getItem('dept_filter') || ''; // Default empty if null
+        let currentDeptFilter = localStorage.getItem('dept_filter') || '';
         let currentRoomFilter = localStorage.getItem('room_filter') || '';
-        let ttsPrefix = localStorage.getItem('tts_prefix') || 'ขอเชิญหมายเลข';
-        let ttsMiddle = localStorage.getItem('tts_middle') || 'ที่ห้องตรวจ';
         let ttsRepeat = parseInt(localStorage.getItem('tts_repeat')) || 1;
+
+        // Connection Settings
+        let apiBase = localStorage.getItem('api_base') || ''; // Default empty = relative
+        let wsUrl = localStorage.getItem('ws_url') || 'ws://localhost:8765';
+
+        // Helper to construct API URL
+        const getApiUrl = (endpoint) => {
+            if (!apiBase) return endpoint;
+            // Remove trailing slash from base if present, remove leading slash from endpoint if present
+            const cleanBase = apiBase.replace(/\/+$/, '');
+            const cleanEndpoint = endpoint.replace(/^\/+/, '');
+            return `${cleanBase}/${cleanEndpoint}`;
+        };
 
         let allRooms = [];
         let allQueues = [];
-        let deptList = []; // Store depts for usage in modal
+        let deptList = [];
 
         let calledPage = 0;
-        let waitingPage = 0;
         const CALLED_PAGE_SIZE = 15;
-        const WAITING_PAGE_SIZE = 10;
 
         // Elements
         const deptNameEl = document.getElementById('dept-name');
@@ -282,15 +328,13 @@
         const inputSub = document.getElementById('input-dept-sub');
         const inputFilter = document.getElementById('input-dept-filter');
         const inputRoomFilter = document.getElementById('input-room-filter');
-        const inputTtsPrefix = document.getElementById('input-tts-prefix');
-        const inputTtsMiddle = document.getElementById('input-tts-middle');
-        const inputVoice = document.getElementById('input-voice');
         const inputTtsRepeat = document.getElementById('input-tts-repeat');
+        const inputApiBase = document.getElementById('input-api-base');
+        const inputWsUrl = document.getElementById('input-ws-url');
 
         const deptOverlay = document.getElementById('dept-select-overlay');
         const deptListEl = document.getElementById('dept-selection-list');
 
-        // Combined Container
         const container = document.getElementById('room-grid');
         const labListEl = document.getElementById('lab-list');
         const xrayListEl = document.getElementById('xray-list');
@@ -298,21 +342,13 @@
         function openSettings() {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-
-            // Load current values to inputs
             inputName.value = deptNameEl.innerText;
             inputSub.value = deptSubEl.innerText;
             inputFilter.value = currentDeptFilter;
-
-            inputTtsPrefix.value = ttsPrefix;
-            inputTtsMiddle.value = ttsMiddle;
             inputTtsRepeat.value = ttsRepeat;
-
-            // Populate Room Filter based on current Dept
+            inputApiBase.value = apiBase;
+            inputWsUrl.value = wsUrl;
             updateRoomFilterOptions(currentDeptFilter, currentRoomFilter);
-
-            // Force refresh voice list
-            loadVoices();
         }
 
         function closeSettings() {
@@ -321,52 +357,46 @@
         }
 
         async function saveSettings() {
-            // UI Text (Optional - handled by backend primarily, but we can override locally if needed)
-            // But per code structure, loadInitData fetches api/settings.php. 
-            // If we want "This Machine" settings to override, we should use localStorage for titles too?
-            // The request says "Increase change dept and room at that page".
-
-            // 1. Save to LocalStorage
             currentDeptFilter = inputFilter.value;
             currentRoomFilter = inputRoomFilter.value;
-            ttsPrefix = inputTtsPrefix.value || 'ขอเชิญหมายเลข';
-            ttsMiddle = inputTtsMiddle.value || 'ที่ห้องตรวจ';
             ttsRepeat = parseInt(inputTtsRepeat.value) || 1;
-            const selectedVoice = inputVoice.value;
 
             localStorage.setItem('dept_filter', currentDeptFilter);
             localStorage.setItem('room_filter', currentRoomFilter);
-            localStorage.setItem('tts_prefix', ttsPrefix);
-            localStorage.setItem('tts_middle', ttsMiddle);
-            localStorage.setItem('tts_voice', selectedVoice);
             localStorage.setItem('tts_repeat', ttsRepeat);
 
-            // 2. Apply Titles (Client side override or just re-fetch if we had a backend save)
-            // For now, let's trust the inputs for immediate feedback
-            // Note: inputName and inputSub seem to be intended for Global Settings? 
-            // The prompt says "Change dept and room at that page". 
-            // Let's assume inputName/Sub are for local display override if desired, 
-            // OR if they are intended to save back to server, we'd need an API.
-            // Existing code loaded from api/settings.php.
-            // I will NOT save name/sub to server as I don't see a PUT endpoint ready in the file list.
-            // I will prioritize the "Text" and "Filter" logic requested.
+            // Save Connection Settings
+            const newApiBase = inputApiBase.value.trim();
+            const newWsUrl = inputWsUrl.value.trim();
+            const wsChanged = newWsUrl !== wsUrl;
+
+            apiBase = newApiBase;
+            wsUrl = newWsUrl || 'ws://localhost:8765'; // Default if empty
+
+            localStorage.setItem('api_base', apiBase);
+            localStorage.setItem('ws_url', wsUrl);
 
             closeSettings();
-
-            // Reload Data with new filters
             calledPage = 0;
             loadRoomsAndQueue();
+
+            // Reconnect WS if changed
+            if (wsChanged) {
+                if (window.wsSocket) {
+                    window.wsSocket.close();
+                }
+                setTimeout(connectWS, 500);
+            }
         }
 
         async function onDeptFilterChange() {
             const dept = inputFilter.value;
-            // Fetch rooms for this dept to populate room select
             await updateRoomFilterOptions(dept, '');
         }
 
         async function updateRoomFilterOptions(dept, selectedRoom) {
             try {
-                let url = 'api/rooms.php';
+                let url = getApiUrl('api/rooms.php');
                 if (dept) url += `?department=${encodeURIComponent(dept)}`;
                 const r = await fetch(url);
                 const d = await r.json();
@@ -374,17 +404,14 @@
                     const rooms = d.data;
                     inputRoomFilter.innerHTML = '<option value="">Show All Rooms</option>' +
                         rooms.map(r => `<option value="${r.id}">${r.room_name}</option>`).join('');
-
                     if (selectedRoom) inputRoomFilter.value = selectedRoom;
                 }
             } catch (e) { console.error(e); }
         }
 
-        // Initial Load
         async function loadInitData() {
-            // Global Settings
             try {
-                const res = await fetch('api/settings.php');
+                const res = await fetch(getApiUrl('api/settings.php'));
                 const data = await res.json();
                 if (data.success && data.data) {
                     if (data.data.dept_name) deptNameEl.innerText = data.data.dept_name;
@@ -392,17 +419,15 @@
                 }
             } catch (e) { }
 
-            // Dept Options
             try {
-                const res2 = await fetch('api/departments.php');
+                const res2 = await fetch(getApiUrl('api/departments.php'));
                 const data2 = await res2.json();
                 if (data2.success) {
                     const depts = data2.data;
-                    deptList = depts; // Save for later
+                    deptList = depts;
                     inputFilter.innerHTML = '<option value="">Show All</option>' +
                         depts.map(d => `<option value="${d}">${d}</option>`).join('');
 
-                    // Restore saved filter
                     if (currentDeptFilter) inputFilter.value = currentDeptFilter;
 
                     deptListEl.innerHTML = depts.map(d => `
@@ -430,7 +455,6 @@
             loadRoomsAndQueue();
         }
 
-        // Time Updates
         function updateTime() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -440,31 +464,23 @@
         updateTime();
 
         async function loadRoomsAndQueue() {
-            // Fetch Rooms for this department
             try {
-                let url = 'api/rooms.php';
+                let url = getApiUrl('api/rooms.php');
                 if (currentDeptFilter) url += `?department=${encodeURIComponent(currentDeptFilter)}`;
                 const r = await fetch(url);
                 const d = await r.json();
                 if (d.success) {
                     allRooms = d.data;
-
-                    // User Request: Header Subtitle should be Department Name + Room Description
                     if (currentDeptFilter) {
                         const uniqueDescriptions = [...new Set(
                             allRooms.map(r => r.description).filter(desc => desc && desc.trim().length > 0)
                         )];
                         const descText = uniqueDescriptions.join(' / ');
-
-                        // Format: "DepartmentName - Description"
                         if (descText) {
                             deptSubEl.innerText = `${currentDeptFilter} ${descText}`;
                         } else {
                             deptSubEl.innerText = currentDeptFilter;
                         }
-                    } else {
-                        // Default / All
-                        // deptSubEl.innerText = "All Departments";
                     }
                 }
             } catch (e) { allRooms = []; }
@@ -474,14 +490,9 @@
 
         async function fetchQueue() {
             try {
-                let url = 'api/queue_data.php?limit=50'; // Fetch more so we can carousel
+                let url = getApiUrl('api/queue_data.php?limit=50');
                 if (currentDeptFilter) {
-                    // We need ALL queues for Lab/Xray too, not just filtered ones?
-                    // But if this board is for Dept A, maybe we only show Lab/Xray for Dept A?
-                    // Let's assume dashboard shows everything related to filtered Dept.
                     url += `&department=${encodeURIComponent(currentDeptFilter)}`;
-                } else {
-                    // If 'Show All', we just fetch all
                 }
 
                 const res = await fetch(url);
@@ -491,21 +502,13 @@
                     allQueues = data.data;
                     processAndRender();
 
-                    // Trigger TTS check (only for active calls)
-                    // Trigger TTS check (only for active calls)
                     const called = allQueues.filter(q => q.status === 'called');
                     if (called.length > 0) {
-                        // FIX: Use updated_at to find the *latest* call event, ensuring Recalls work.
-                        // Fallback to 'created_at' or 'id' if updated_at is null (though DB default has it)
                         const latest = called.reduce((prev, current) => {
                             const prevTime = new Date(prev.updated_at || prev.created_at).getTime();
                             const currTime = new Date(current.updated_at || current.created_at).getTime();
                             return (prevTime > currTime) ? prev : current;
                         });
-
-                        // We track by composite ID+Time to ensure we speak if same ID is Updated
-                        // Actually, tracking "Last Spoken Timestamp" is safer?
-                        // But let's check if the ID+Time changed from last known.
 
                         const latestTime = new Date(latest.updated_at || latest.created_at).getTime();
                         const uniqueKey = `${latest.id}_${latestTime}`;
@@ -523,44 +526,29 @@
 
         function maskName(fullName) {
             if (!fullName) return '';
-
-            // ฟังก์ชันย่อยสำหรับ Mask ข้อความ (เก็บ 2 ตัวหน้า ส่วนที่เหลือเปลี่ยนเป็น x)
             const maskText = (text) => {
-                if (!text || text.length <= 2) return text; // ถ้าสั้นเกินไป ไม่ต้อง mask
+                if (!text || text.length <= 2) return text;
                 return text.substring(0, 2) + 'x'.repeat(text.length - 2);
             };
-
-            // 1. แยกชื่อ และ นามสกุล ออกจากกันด้วยช่องว่าง
             const parts = fullName.split(' ');
             let firstName = parts[0];
-            let lastName = parts.slice(1).join(' '); // นามสกุล (เผื่อมีเว้นวรรคหลายขยัก)
-
-            // 2. จัดการส่วนชื่อจริง (ตรวจสอบคำนำหน้าชื่อที่มีจุด เช่น นาย. หรือ น.ส.)
+            let lastName = parts.slice(1).join(' ');
             if (firstName.includes('.')) {
-                const dotIndex = firstName.lastIndexOf('.'); // หาตำแหน่งจุดสุดท้าย
-                const prefix = firstName.substring(0, dotIndex + 1); // เก็บคำนำหน้า (เช่น "นาย.")
-                const realName = firstName.substring(dotIndex + 1);  // เก็บชื่อจริง (เช่น "กกกก")
-
-                // ประกอบร่าง: คำนำหน้า + ชื่อที่ mask แล้ว
+                const dotIndex = firstName.lastIndexOf('.');
+                const prefix = firstName.substring(0, dotIndex + 1);
+                const realName = firstName.substring(dotIndex + 1);
                 firstName = prefix + maskText(realName);
             } else {
-                // กรณีไม่มีคำนำหน้าแบบมีจุด
                 firstName = maskText(firstName);
             }
-
-            // 3. จัดการนามสกุล (ถ้ามี)
             if (lastName) {
                 lastName = maskText(lastName);
                 return `${firstName} ${lastName}`;
             }
-
             return firstName;
         }
 
-        // Logic to Merge Rooms + Queues and Render Pages
         function processAndRender() {
-            // 1. Prepare Room Cards (Merged)
-            // Map ALL ROOMS. If a room has an active call, use it. Else Idle.
             const roomCards = allRooms.map(room => {
                 const activeCall = allQueues.find(q => q.status === 'called' && String(q.room_number) === String(room.id));
                 const waitingForThisRoom = allQueues.filter(q => q.status === 'waiting' && String(q.room_number) === String(room.id));
@@ -572,7 +560,7 @@
                         <div class="flex justify-between items-center mb-2 px-1">
                              <div class="flex items-center gap-2">
                                 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">รอเรียก (${totalWaiting})</span>
+                                <span class="text-xl font-bold text-slate-300 uppercase tracking-wider">รอเรียก (${totalWaiting})</span>
                              </div>
                         </div>
                         <div class="space-y-1.5">
@@ -591,18 +579,13 @@
                     </div>
                 `;
 
-                // WRAPPER DIV for Card + Waiting List
-                // We return the whole markup for this grid Item
                 let cardContent = '';
-
                 if (activeCall) {
-                    // Active Card Logic
                     const lastTime = lastCallTimes[room.id] || 0;
                     const isBlinking = (Date.now() - lastTime) < 10000;
                     const containerClass = isBlinking
                         ? "bg-yellow-400 border-yellow-200 shadow-yellow-500/50 animate-pulse text-slate-900"
                         : "bg-gradient-to-br from-emerald-500 to-teal-700 border-white/20 shadow-emerald-500/40 text-white";
-
                     const titleClass = isBlinking ? "text-slate-800" : "text-emerald-100";
                     const vnClass = isBlinking ? "text-black" : "text-white";
                     const nameBgClass = isBlinking ? "bg-black/10" : "bg-black/20";
@@ -611,7 +594,6 @@
                     cardContent = `
                         <div class="relative overflow-hidden rounded-3xl ${containerClass} p-4 flex flex-col items-center justify-between text-center shadow-lg border-4 min-h-[300px]">
                              <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                             
                              <div class="flex-1 flex flex-col justify-center items-center w-full z-10">
                                 <span class="text-xl font-bold uppercase tracking-wider mb-2 opacity-90 ${titleClass}">ห้องตรวจ ${room.room_name}</span>
                                 <h3 class="text-7xl font-black tracking-tighter my-2 leading-none ${vnClass}">${activeCall.oqueue || activeCall.vn}</h3>
@@ -622,9 +604,7 @@
                         </div>
                     `;
                 } else {
-                    // Idle Card Logic
                     if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
-
                     cardContent = `
                         <div class="bg-slate-800/60 p-4 rounded-3xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-75 min-h-[300px]">
                             <span class="text-lg text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
@@ -634,10 +614,7 @@
                     `;
                 }
 
-                // Filtering Check
                 if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
-
-                // Combine Card + Separated Waiting List
                 return `
                     <div class="flex flex-col gap-3">
                         ${cardContent}
@@ -645,19 +622,10 @@
                     </div>
                 `;
             });
-
-            // 3. Render Current Page
             renderPagination(roomCards);
         }
 
-        // Scroll State
-        let marqueeInterval;
-        let lastWaitingData = ''; // To prevent re-rendering and jumpiness
-
         function renderPagination(roomCards) {
-            // New Layout: We don't have a separate marquee list anymore.
-            // But we still have pagination for rooms if many rooms?
-
             const totalCalledPages = Math.ceil(roomCards.length / CALLED_PAGE_SIZE) || 1;
             if (calledPage >= totalCalledPages) calledPage = 0;
             const startC = calledPage * CALLED_PAGE_SIZE;
@@ -666,8 +634,6 @@
             container.innerHTML = currentRooms.join('') || `
                 <div class="col-span-full h-40 flex items-center justify-center text-white/20 text-xl font-bold border-2 border-dashed border-white/10 rounded-3xl">Loading Rooms...</div>
             `;
-
-            // Render Lab/Xray
             renderLabXray();
         }
 
@@ -681,71 +647,191 @@
                      <span class="text-xs text-white/60 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
                 </div>
             `;
-
             labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
             xrayListEl.innerHTML = xrays.length ? xrays.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
         }
 
-
-        function startMarquee() {
-            // Deprecated
-        }
-
-        function stopMarquee() {
-            // Deprecated
-        }
-
-        // Sound State
         let audioUnlocked = false;
-
         function unlockAudio() {
             if (audioUnlocked) return;
-
-            // Create a short silence to unlock audio context
-            const utterance = new SpeechSynthesisUtterance(" ");
-            window.speechSynthesis.speak(utterance);
-            audioUnlocked = true;
-
-            // Hide overlay
-            document.getElementById('sound-overlay').classList.add('hidden');
-            console.log("Audio Context Unlocked");
+            // Play a silent buffer or short file to unlock
+            // With File Audio, we should try to play an empty buffer or a silent file if we had one
+            // Or just a tiny part of Prompt4_Number
+            const a = new Audio("Prompt4/Prompt4_Number.wav");
+            a.volume = 0;
+            a.play().then(() => {
+                a.pause();
+                audioUnlocked = true;
+                document.getElementById('sound-overlay').classList.add('hidden');
+                console.log("Audio Context Unlocked");
+            }).catch(e => console.error("Unlock failed", e));
         }
 
-        // TTS Queue Logic
+        // --- NEW TTS LOGIC (File Based) ---
         const ttsQueue = [];
         let isSpeaking = false;
-        let lastCallTimes = {}; // room_id -> timestamp (ms)
+        let lastCallTimes = {};
 
         function speakQueue(item) {
-            console.log("Queueing TTS:", item); // DEBUG
+            console.log("Queueing File Audio:", item);
 
-            // Reload settings from localStorage to ensure we have the absolute latest values
-            const currentPrefix = localStorage.getItem('tts_prefix') || 'ขอเชิญหมายเลข';
-            const currentMiddle = localStorage.getItem('tts_middle') || 'ที่ห้องตรวจ';
-
-            // "ขอเชิญหมายเลข ... ที่ห้อง ... ค่ะ"
-            const text = `${currentPrefix} ${item.oqueue || item.vn} ${currentMiddle} ${item.room_number}`;
-
-            // Mark time for blinking effect
+            // Blink Effect
             lastCallTimes[item.room_number] = Date.now();
-
-            // Force re-render to start blink immediately
             processAndRender();
+            setTimeout(() => { processAndRender(); }, 11000);
 
-            // Schedule stop blink after 11 seconds (buffer)
-            setTimeout(() => {
-                processAndRender();
-            }, 11000);
+            // Construct File List
+            // 1. Prompt4_Number (prefix)
+            // 2. Prompt4_{int}.wav (number)
+            // 3. Prompt4_Sir (suffix)
+
+            // Extract Number
+            const numStr = item.oqueue || item.vn;
+            const num = parseInt(numStr);
+
+            if (isNaN(num)) {
+                console.warn("Invalid Queue Number for File Audio:", numStr);
+                return;
+            }
+
+            // Get Sequence
+            const numberFiles = getThaiNumberFiles(num);
+
+            // Get Sequence for Room
+            const roomNum = parseInt(item.room_number);
+            const roomFiles = (!isNaN(roomNum)) ? getThaiNumberFiles(roomNum) : [];
+
+            const files = [
+                'Prompt4/Prompt4_Number.wav',
+                ...numberFiles,
+                'Prompt4/Prompt4_Service.wav',
+                ...roomFiles,
+                'Prompt4/Prompt4_Sir.wav'
+            ];
 
             // Repeat N times
             for (let i = 0; i < ttsRepeat; i++) {
-                ttsQueue.push({ text: text, lang: 'th-TH' });
+                ttsQueue.push(files);
             }
 
             processTTSQueue();
         }
 
-        // Page Cycling Interval
+        async function processTTSQueue() {
+            if (isSpeaking || ttsQueue.length === 0) return;
+            const fileSet = ttsQueue.shift();
+            isSpeaking = true;
+            try {
+                await playAudioSequence(fileSet);
+            } catch (e) {
+                console.error("Audio Sequence Failed", e);
+            }
+            isSpeaking = false;
+            setTimeout(processTTSQueue, 500);
+        }
+
+        function playAudioSequence(files) {
+            return new Promise(async (resolve, reject) => {
+                for (const file of files) {
+                    try {
+                        await playSingleFile(file);
+                    } catch (e) {
+                        console.warn(`Failed to play ${file}`, e);
+                        // Convert missing file error into a "continue" so we play the rest? 
+                        // Or break? Let's continue to attempt suffix.
+                    }
+                }
+                resolve();
+            });
+        }
+
+        function playSingleFile(url) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio(url);
+                audio.onended = resolve;
+                audio.onerror = () => {
+                    // reject(`Error loading ${url}`);
+                    // Resolve anyway to prevent hanging
+                    console.error(`Error loading ${url}`);
+                    resolve();
+                };
+                audio.play().catch(e => {
+                    console.error("Play error", e);
+                    resolve();
+                });
+            });
+        }
+
+        function getThaiNumberFiles(num) {
+            const files = [];
+
+            // Thousands
+            if (num >= 1000) {
+                const thousands = Math.floor(num / 1000);
+                num %= 1000;
+
+                files.push(`Prompt4/Prompt4_${thousands}.wav`);
+                files.push('Prompt4/Prompt4_1000.wav');
+            }
+
+            // Hundreds
+            if (num >= 100) {
+                const hundreds = Math.floor(num / 100);
+                num %= 100;
+
+                files.push(`Prompt4/Prompt4_${hundreds}.wav`);
+                files.push('Prompt4/Prompt4_100.wav');
+            }
+
+            // Tens & Ones
+            if (num >= 10) {
+                const tens = Math.floor(num / 10);
+                const ones = num % 10;
+
+                if (tens === 1) {
+                    // 10–19 (Sip ...)
+                    files.push('Prompt4/Prompt4_10.wav');
+
+                    if (ones === 1) {
+                        files.push('Prompt4/Prompt4_11-1.wav'); // สิบเอ็ด (Sip Et)
+                    } else if (ones > 1) {
+                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    }
+                    return files;
+                }
+
+                if (tens === 2) {
+                    // 20–29 (Yi Sip ...)
+                    files.push('Prompt4/Prompt4_20.wav'); // Yi Sip
+
+                    if (ones === 1) {
+                        files.push('Prompt4/Prompt4_11-1.wav'); // Yi Sip Et
+                    } else if (ones > 1) {
+                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    }
+                    return files;
+                }
+
+                // 30-90 (Sam Sip, Si Sip, ...)
+                files.push(`Prompt4/Prompt4_${tens}.wav`); // digit (3, 4, 5...)
+                files.push('Prompt4/Prompt4_10.wav'); // Sip
+
+                if (ones === 1) {
+                    files.push('Prompt4/Prompt4_11-1.wav'); // Et
+                } else if (ones > 1) {
+                    files.push(`Prompt4/Prompt4_${ones}.wav`);
+                }
+                return files;
+            }
+
+            // Ones only (1-9)
+            if (num > 0) {
+                files.push(`Prompt4/Prompt4_${num}.wav`);
+            }
+
+            return files;
+        }
+
         setInterval(() => {
             const totalCalledPages = Math.ceil(allRooms.length / CALLED_PAGE_SIZE) || 1;
             if (totalCalledPages > 1) {
@@ -755,139 +841,27 @@
             }
         }, 10000);
 
-        async function processTTSQueue() {
-            if (isSpeaking || ttsQueue.length === 0) return;
-
-            const item = ttsQueue.shift();
-            isSpeaking = true;
-
-            console.log("Processing TTS Item:", item); // DEBUG
-
-            try {
-                // Hybrid 1: Try Google Translate TTS
-                await playGoogleTTS(item.text);
-            } catch (err) {
-                console.warn("Google TTS failed, falling back to Native:", err);
-                // Hybrid 2: Fallback to Native
-                await playNativeTTS(item);
-            }
-
-            isSpeaking = false;
-            setTimeout(processTTSQueue, 500);
-        }
-
-        function playGoogleTTS(text) {
-            return new Promise((resolve, reject) => {
-                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=th&client=tw-ob`);
-                audio.onended = resolve;
-                audio.onerror = reject;
-                // Timeout fallback if it hangs (e.g. 5s)
-                const timeout = setTimeout(() => {
-                    audio.pause();
-                    reject("Timeout");
-                }, 5000);
-
-                audio.play().catch(reject);
-            });
-        }
-
-        function playNativeTTS(item) {
-            return new Promise((resolve) => {
-                const utterance = new SpeechSynthesisUtterance(item.text);
-                utterance.lang = item.lang;
-                utterance.rate = 1.0;
-                utterance.pitch = 1.2;
-
-                const voices = window.speechSynthesis.getVoices();
-                let thaiVoice = voices.find(v => v.lang.includes('th') && (v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya')));
-                if (!thaiVoice) thaiVoice = voices.find(v => v.lang.includes('th'));
-                if (thaiVoice) utterance.voice = thaiVoice;
-
-                const savedVoiceURI = localStorage.getItem('tts_voice');
-                if (savedVoiceURI) {
-                    const specificVoice = voices.find(v => v.voiceURI === savedVoiceURI);
-                    if (specificVoice) utterance.voice = specificVoice;
-                }
-
-                utterance.onend = () => {
-                    resolve();
-                };
-                utterance.onerror = (e) => {
-                    console.error("Native TTS Error", e);
-                    resolve(); // Resolve anyway to unblock queue
-                };
-
-                window.speechSynthesis.speak(utterance);
-            });
-        }
-
-        // Initialize voices
-        let availableVoices = [];
-
-        function loadVoices() {
-            const all = window.speechSynthesis.getVoices();
-            if (all.length > 0) {
-                availableVoices = all;
-                console.log("Voices Loaded via function: " + availableVoices.length);
-                populateVoiceList();
-            }
-        }
-
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-
-        // Try loading immediately as well (for browsers where voices are ready)
-        loadVoices();
-
-        // Polling fallback if voices are stuck
-        let voiceInterval = setInterval(() => {
-            if (availableVoices.length === 0) {
-                loadVoices();
-            } else {
-                clearInterval(voiceInterval);
-            }
-        }, 1000);
-
-        function populateVoiceList() {
-            const thaiVoices = availableVoices.filter(v => v.lang.includes('th'));
-            const saved = localStorage.getItem('tts_voice');
-
-            inputVoice.innerHTML = '<option value="">Default (Auto)</option>' +
-                thaiVoices.map(v => `<option value="${v.voiceURI}" ${v.voiceURI === saved ? 'selected' : ''}>${v.name}</option>`).join('');
-
-            // Also add common English ones if no Thai found? No, user requested Thai.
-        }
-
-        function testVoice() {
-            const uri = inputVoice.value;
-            const text = "ทดสอบเสียงค่ะ 1 2 3";
-            const ut = new SpeechSynthesisUtterance(text);
-            ut.lang = 'th-TH';
-            if (uri) {
-                const v = availableVoices.find(x => x.voiceURI === uri);
-                if (v) ut.voice = v;
-            }
-            window.speechSynthesis.speak(ut);
-        }
-
-        // WebSocket Connection
+        // WS Init
         function connectWS() {
-            const socket = new WebSocket('ws://localhost:8765');
+            if (window.wsSocket) {
+                if (window.wsSocket.readyState === WebSocket.OPEN || window.wsSocket.readyState === WebSocket.CONNECTING) return;
+            }
+            console.log("Connecting to WS:", wsUrl);
+            const socket = new WebSocket(wsUrl);
+            window.wsSocket = socket;
+
             socket.onopen = function () {
                 console.log('Connected');
                 document.body.style.borderTop = "4px solid #10b981";
             };
             socket.onmessage = function (event) {
-                console.log("WS Data", event.data);
                 try {
                     const payload = JSON.parse(event.data);
                     if (payload.event === 'recall' && payload.data) {
                         speakQueue(payload.data);
                     }
-                    // Always refresh
                     fetchQueue();
-                } catch (e) {
-                    fetchQueue();
-                }
+                } catch (e) { fetchQueue(); }
             };
             socket.onclose = function () {
                 document.body.style.borderTop = "4px solid #ef4444";
@@ -895,12 +869,7 @@
             };
         }
         connectWS();
-
-        // Fallback polling
         setInterval(fetchQueue, 30000);
-
-        // Initial Fetch
-        // fetchQueue called by overlay logic or load
     </script>
 </body>
 
