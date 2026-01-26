@@ -69,6 +69,21 @@
                 <p class="text-slate-400">Reorder, Delete, and Manage Lists</p>
             </a>
 
+            <!-- Kiosk Station -->
+            <a href="kiosk2.php"
+                class="group bg-slate-800 p-8 rounded-3xl border border-slate-700 hover:border-pink-500 hover:bg-slate-750 transition-all flex flex-col items-center text-center cursor-pointer shadow-lg hover:shadow-pink-500/20 hover:-translate-y-1">
+                <div
+                    class="w-20 h-20 bg-pink-500/20 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-pink-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">Kiosk Station</h2>
+                <p class="text-slate-400">Self-Service Queue Ticket Issue</p>
+            </a>
+
             <!-- Setup (Optional) -->
             <!-- Setup -->
             <div onclick="openSettings()"
