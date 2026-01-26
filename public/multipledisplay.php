@@ -73,15 +73,15 @@
                 </svg>
             </div>
             <div class="cursor-pointer group" onclick="openSettings()">
-                <h1 id="dept-name" class="text-3xl font-bold text-white group-hover:text-brand-300 transition">
+                <h1 id="dept-name" class="text-xl font-bold text-white group-hover:text-brand-300 transition">
                     คิวตรวจโรคทั่วไป</h1>
                 <p id="dept-sub" class="text-brand-200/60 text-sm group-hover:text-brand-300/60 transition">General OPD
                     Queue</p>
             </div>
         </div>
         <div class="text-right">
-            <div id="clock" class="text-4xl font-mono font-bold tracking-widest text-brand-50">00:00</div>
-            <div id="date" class="text-brand-100/60 text-lg">...</div>
+            <div id="clock" class="text-2xl font-mono font-bold tracking-widest text-brand-50">00:00</div>
+            <div id="date" class="text-brand-100/60 text-sm">...</div>
         </div>
     </header>
 
@@ -553,7 +553,7 @@
                 const activeCall = allQueues.find(q => q.status === 'called' && String(q.room_number) === String(room.id));
                 const waitingForThisRoom = allQueues.filter(q => q.status === 'waiting' && String(q.room_number) === String(room.id));
                 const totalWaiting = waitingForThisRoom.length;
-                const next5 = waitingForThisRoom.slice(0, 5);
+                const next5 = waitingForThisRoom.slice(0, 3);
 
                 const waitingHtml = next5.length > 0 ? `
                     <div class="mt-4 w-full bg-slate-900/50 rounded-xl p-3 border border-white/5 backdrop-blur-sm">
@@ -563,14 +563,13 @@
                                 <span class="text-xl font-bold text-slate-300 uppercase tracking-wider">รอเรียก (${totalWaiting})</span>
                              </div>
                         </div>
-                        <div class="space-y-1.5">
+                        <div class="grid grid-cols-3 gap-3">
                             ${next5.map(q => `
-                                <div class="flex justify-between items-center text-sm bg-white/5 hover:bg-white/10 transition px-3 py-2 rounded-lg border border-white/5">
-                                    <span class="font-mono font-bold text-white text-lg">${q.oqueue || q.vn}</span>
-                                    <span class="text-slate-400 text-xs">${maskName(q.patient_name)}</span>
+                                <div class="flex flex-col items-center justify-center text-sm bg-indigo-900/40 px-3 py-4 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
+                                    <div class="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition"></div>
+                                    <span class="font-black text-white text-5xl tracking-tighter relative z-10">${q.oqueue || q.vn}</span>
                                 </div>
                             `).join('')}
-                             ${totalWaiting > 5 ? `<div class="text-center text-xs text-slate-500 pt-2 font-medium">+${totalWaiting - 5} more</div>` : ''}
                         </div>
                     </div>
                 ` : `
@@ -585,20 +584,20 @@
                     const isBlinking = (Date.now() - lastTime) < 10000;
                     const containerClass = isBlinking
                         ? "bg-yellow-400 border-yellow-200 shadow-yellow-500/50 animate-pulse text-slate-900"
-                        : "bg-gradient-to-br from-emerald-500 to-teal-700 border-white/20 shadow-emerald-500/40 text-white";
+                        : "bg-indigo-900/20 border-white/20 shadow-indigo-900/40 text-white";
                     const titleClass = isBlinking ? "text-slate-800" : "text-emerald-100";
                     const vnClass = isBlinking ? "text-black" : "text-white";
                     const nameBgClass = isBlinking ? "bg-black/10" : "bg-black/20";
                     const nameTextClass = isBlinking ? "text-slate-900" : "text-white";
 
                     cardContent = `
-                        <div class="relative overflow-hidden rounded-3xl ${containerClass} p-4 flex flex-col items-center justify-between text-center shadow-lg border-4 min-h-[300px]">
+                        <div class="relative overflow-hidden rounded-3xl ${containerClass} p-4 flex flex-col items-center justify-between text-center shadow-lg border-4 min-h-[450px]">
                              <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                              <div class="flex-1 flex flex-col justify-center items-center w-full z-10">
-                                <span class="text-xl font-bold uppercase tracking-wider mb-2 opacity-90 ${titleClass}">ห้องตรวจ ${room.room_name}</span>
-                                <h3 class="text-7xl font-black tracking-tighter my-2 leading-none ${vnClass}">${activeCall.oqueue || activeCall.vn}</h3>
+                                <span class="text-3xl font-bold uppercase tracking-wider mb-2 opacity-90 ${titleClass}">ห้องตรวจ ${room.room_name}</span>
+                                <h3 class="text-[14rem] font-black tracking-tighter my-2 leading-none ${vnClass}">${activeCall.oqueue || activeCall.vn}</h3>
                                 <div class="mt-2 ${nameBgClass} rounded-full px-4 py-1.5 backdrop-blur-sm max-w-full">
-                                    <p class="text-lg font-medium truncate ${nameTextClass}">${maskName(activeCall.patient_name)}</p>
+                                    <p class="text-4xl font-medium truncate ${nameTextClass}">${maskName(activeCall.patient_name)}</p>
                                 </div>
                              </div>
                         </div>
@@ -606,7 +605,7 @@
                 } else {
                     if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
                     cardContent = `
-                        <div class="bg-slate-800/60 p-4 rounded-3xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-75 min-h-[300px]">
+                        <div class="bg-slate-800/60 p-4 rounded-3xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-75 min-h-[450px]">
                             <span class="text-lg text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
                             <h3 class="text-5xl font-bold text-slate-600 tracking-tight my-4">ว่าง</h3>
                             <p class="text-sm text-slate-500 truncate">รอเรียก...</p>
