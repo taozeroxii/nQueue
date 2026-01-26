@@ -38,7 +38,21 @@ $room = $_GET['room'] ?? 1; // Default fallback
     </script>
 </head>
 
-<body class="bg-slate-900 min-h-screen text-white flex flex-col items-center justify-center p-4 overflow-hidden">
+<body class="bg-slate-900 min-h-screen text-white flex flex-col items-center justify-center p-4 overflow-hidden"
+    onclick="unlockAudio()">
+
+    <!-- Sound Unlock Overlay -->
+    <div id="sound-overlay"
+        class="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center cursor-pointer">
+        <div class="bg-white/10 p-8 rounded-full mb-4 animate-bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            </svg>
+        </div>
+        <p class="text-2xl font-bold animate-pulse">Click anywhere to enable Sound</p>
+    </div>
 
     <div class="w-full max-w-5xl flex-1 flex flex-col gap-6 h-full relative">
 
@@ -70,8 +84,8 @@ $room = $_GET['room'] ?? 1; // Default fallback
                 <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none">
                 </div>
 
-                <span class="text-3xl text-indigo-200 font-bold mb-4 uppercase tracking-widest opacity-90">Current
-                    Queue</span>
+                <span
+                    class="text-3xl text-indigo-200 font-bold mb-4 uppercase tracking-widest opacity-90">หมายเลขที่กำลังรับบริการ</span>
 
                 <div id="q-number"
                     class="text-[14rem] leading-none font-black text-white my-4 tracking-tighter table-nums">...</div>
@@ -106,7 +120,8 @@ $room = $_GET['room'] ?? 1; // Default fallback
     <!-- Settings Modal -->
     <div id="settings-modal"
         class="fixed inset-0 bg-slate-900/95 z-[60] hidden flex-col items-center justify-center backdrop-blur-md">
-        <div class="text-center max-w-md w-full p-8 bg-slate-800 rounded-3xl border border-white/10 shadow-2xl">
+        <div
+            class="text-center max-w-md w-full p-8 bg-slate-800 rounded-3xl border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h1 class="text-3xl font-bold text-white mb-6">Display Settings</h1>
 
             <div class="flex flex-col gap-4 text-left">
@@ -127,6 +142,15 @@ $room = $_GET['room'] ?? 1; // Default fallback
                         disabled>
                         <option value="">Select Dept First</option>
                     </select>
+                </div>
+
+                <!-- Sound Config -->
+                <div>
+                    <label class="block text-slate-400 mb-2 text-sm">Sound Play Count (times)</label>
+                    <input type="number" id="input-tts-repeat"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm focus:border-brand-500 focus:outline-none"
+                        min="0" max="10" value="1">
+                    <p class="text-xs text-slate-500 mt-1">Number of times to announce the queue</p>
                 </div>
 
                 <!-- API & WS Config -->
@@ -166,6 +190,7 @@ $room = $_GET['room'] ?? 1; // Default fallback
 
         let apiBase = localStorage.getItem('api_base') || '';
         let wsUrl = localStorage.getItem('ws_url') || 'ws://localhost:8765';
+        let ttsRepeat = parseInt(localStorage.getItem('tts_repeat')) || 1;
 
         // Elements
         const modal = document.getElementById('settings-modal');
@@ -173,6 +198,8 @@ $room = $_GET['room'] ?? 1; // Default fallback
         const selRoom = document.getElementById('sel-room');
         const inputApiBase = document.getElementById('input-api-base');
         const inputWsUrl = document.getElementById('input-ws-url');
+        const inputTtsRepeat = document.getElementById('input-tts-repeat');
+        const soundOverlay = document.getElementById('sound-overlay');
 
         // Helper: API URL
         const getApiUrl = (endpoint) => {
@@ -189,7 +216,7 @@ $room = $_GET['room'] ?? 1; // Default fallback
             } else {
                 updateHeader();
                 fetchRoomQueue();
-                setInterval(fetchRoomQueue, 5000);
+                setInterval(fetchRoomQueue, 60000);
                 connectWS();
             }
         }
@@ -210,15 +237,17 @@ $room = $_GET['room'] ?? 1; // Default fallback
             // Populate Inputs
             inputApiBase.value = apiBase;
             inputWsUrl.value = wsUrl;
+            inputTtsRepeat.value = ttsRepeat;
 
             await loadDepts();
         }
 
         function closeSettings() {
-            // Cannot close if no room selected (first load)
             if (!roomId) return;
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            // Stop props to body onclick
+            event?.stopPropagation();
         }
 
         async function loadDepts() {
@@ -250,7 +279,6 @@ $room = $_GET['room'] ?? 1; // Default fallback
             const rid = selRoom.value;
             const rname = selRoom.options[selRoom.selectedIndex]?.text;
 
-            // Only require selection if we don't have one yet or user explicitly selected something
             if (rid) {
                 roomId = rid;
                 selectedRoomName = rname;
@@ -263,16 +291,16 @@ $room = $_GET['room'] ?? 1; // Default fallback
                 return;
             }
 
-            // Save Connection Config
-            const newApiBase = inputApiBase.value.trim();
+            apiBase = inputApiBase.value.trim();
             const newWsUrl = inputWsUrl.value.trim();
             const wsChanged = newWsUrl !== wsUrl;
-
-            apiBase = newApiBase;
             wsUrl = newWsUrl || 'ws://localhost:8765';
+
+            ttsRepeat = parseInt(inputTtsRepeat.value) || 1;
 
             localStorage.setItem('api_base', apiBase);
             localStorage.setItem('ws_url', wsUrl);
+            localStorage.setItem('tts_repeat', ttsRepeat);
 
             closeSettings();
             updateHeader();
@@ -289,16 +317,26 @@ $room = $_GET['room'] ?? 1; // Default fallback
         async function fetchRoomQueue() {
             if (!roomId) return;
             try {
-                const res = await fetch(getApiUrl(`api/queue_data.php?room=${roomId}&limit=5`));
+                const res = await fetch(getApiUrl(`api/queue_data.php?room=${roomId}&limit=50&_=${Date.now()}`));
                 const data = await res.json();
                 if (data.success) {
+                    console.log("Queue Data:", data.data);
                     updateDisplay(data.data);
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Fetch Error", e); }
         }
 
         function updateDisplay(queues) {
-            const current = queues.find(q => q.status === 'called');
+            // Fix: Find the LATEST called queue based on timestamp, not just the first one
+            const calledQueues = queues.filter(q => q.status === 'called');
+            let current = null;
+            if (calledQueues.length > 0) {
+                current = calledQueues.reduce((prev, curr) => {
+                    const prevTime = new Date(prev.updated_at || prev.created_at).getTime();
+                    const currTime = new Date(curr.updated_at || curr.created_at).getTime();
+                    return (prevTime > currTime) ? prev : curr;
+                });
+            }
             const waiting = queues.filter(q => q.status === 'waiting');
 
             const qNum = document.getElementById('q-number');
@@ -317,7 +355,6 @@ $room = $_GET['room'] ?? 1; // Default fallback
                 if (parts.length > 0) {
                     let firstName = parts[0];
                     let lastName = parts.slice(1).join(' ');
-
                     if (firstName.includes('.')) {
                         const dotIndex = firstName.lastIndexOf('.');
                         const prefix = firstName.substring(0, dotIndex + 1);
@@ -326,7 +363,6 @@ $room = $_GET['room'] ?? 1; // Default fallback
                     } else {
                         firstName = maskText(firstName);
                     }
-
                     if (lastName) return `${firstName} ${maskText(lastName)}`;
                     return firstName;
                 }
@@ -335,26 +371,40 @@ $room = $_GET['room'] ?? 1; // Default fallback
 
             if (current) {
                 const newNum = current.oqueue || current.vn;
+                const updateTime = current.updated_at || current.created_at || Date.now();
+                const uniqueKey = `${current.id}_${updateTime}`;
 
-                if (qNum.innerText !== newNum) {
+                if (window.lastFlashKey !== uniqueKey) {
+                    window.lastFlashKey = uniqueKey;
+
+                    // Trigger Voice
+                    speakQueue(current);
+
                     // Flash effect
                     container.classList.remove('bg-indigo-900/20', 'border-white/20');
-                    container.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
+                    container.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
                     qNum.classList.remove('text-white');
                     qNum.classList.add('text-slate-900');
                     qName.classList.remove('text-white');
                     qName.classList.add('text-slate-800');
-                    document.querySelector('.text-indigo-200').classList.remove('text-indigo-200');
+                    const titleEl = document.querySelector('#current-queue span');
+                    if (titleEl) {
+                        titleEl.classList.remove('text-indigo-200');
+                        titleEl.classList.add('text-slate-800');
+                    }
 
                     clearTimeout(flashTimeout);
                     flashTimeout = setTimeout(() => {
                         container.classList.add('bg-indigo-900/20', 'border-white/20');
-                        container.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
+                        container.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
                         qNum.classList.add('text-white');
                         qNum.classList.remove('text-slate-900');
                         qName.classList.add('text-white');
                         qName.classList.remove('text-slate-800');
-                        container.querySelector('span').classList.add('text-indigo-200');
+                        if (titleEl) {
+                            titleEl.classList.add('text-indigo-200');
+                            titleEl.classList.remove('text-slate-800');
+                        }
                     }, 5000);
                 }
 
@@ -371,11 +421,123 @@ $room = $_GET['room'] ?? 1; // Default fallback
             document.getElementById('next-3').innerText = waiting[2] ? (waiting[2].oqueue || waiting[2].vn) : '-';
         }
 
+        // --- AUDIO Logic ---
+        let audioUnlocked = false;
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            const a = new Audio("Prompt4/Prompt4_Number.wav");
+            a.volume = 0;
+            a.play().then(() => {
+                a.pause();
+                audioUnlocked = true;
+                soundOverlay.classList.add('hidden');
+                console.log("Audio Unlocked");
+            }).catch(e => console.error("Unlock failed", e));
+        }
+
+        let ttsQueue = [];
+        let isSpeaking = false;
+
+        function speakQueue(item) {
+            console.log("Speaking:", item.oqueue || item.vn);
+            const numStr = item.oqueue || item.vn;
+            const num = parseInt(numStr);
+            if (isNaN(num)) return;
+
+            const numberFiles = getThaiNumberFiles(num);
+            const roomNum = parseInt(item.room_number);
+            const roomFiles = (!isNaN(roomNum)) ? getThaiNumberFiles(roomNum) : [];
+
+            const files = [
+                'Prompt4/Prompt4_Number.wav',
+                ...numberFiles,
+                'Prompt4/Prompt4_Service.wav',
+                ...roomFiles,
+                'Prompt4/Prompt4_Sir.wav'
+            ];
+
+            // Repeat
+            for (let i = 0; i < ttsRepeat; i++) {
+                ttsQueue.push(files);
+            }
+            processTTSQueue();
+        }
+
+        async function processTTSQueue() {
+            if (isSpeaking || ttsQueue.length === 0) return;
+            const fileSet = ttsQueue.shift();
+            isSpeaking = true;
+            try {
+                await playAudioSequence(fileSet);
+            } catch (e) { console.error("Audio Failed", e); }
+            isSpeaking = false;
+            setTimeout(processTTSQueue, 500);
+        }
+
+        function playAudioSequence(files) {
+            return new Promise(async (resolve, reject) => {
+                for (const file of files) {
+                    try { await playSingleFile(file); } catch (e) { }
+                }
+                resolve();
+            });
+        }
+
+        function playSingleFile(url) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio(url);
+                audio.onended = resolve;
+                audio.onerror = () => { console.error("File error", url); resolve(); };
+                audio.play().catch(resolve);
+            });
+        }
+
+        function getThaiNumberFiles(num) {
+            const files = [];
+            // Thousands
+            if (num >= 1000) {
+                const thousands = Math.floor(num / 1000);
+                num %= 1000;
+                files.push(`Prompt4/Prompt4_${thousands}.wav`);
+                files.push('Prompt4/Prompt4_1000.wav');
+            }
+            // Hundreds
+            if (num >= 100) {
+                const hundreds = Math.floor(num / 100);
+                num %= 100;
+                files.push(`Prompt4/Prompt4_${hundreds}.wav`);
+                files.push('Prompt4/Prompt4_100.wav');
+            }
+            // Tens & Ones
+            if (num >= 10) {
+                const tens = Math.floor(num / 10);
+                const ones = num % 10;
+                if (tens === 1) {
+                    files.push('Prompt4/Prompt4_10.wav');
+                    if (ones === 1) files.push('Prompt4/Prompt4_11-1.wav');
+                    else if (ones > 1) files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    return files;
+                }
+                if (tens === 2) {
+                    files.push('Prompt4/Prompt4_20.wav');
+                    if (ones === 1) files.push('Prompt4/Prompt4_11-1.wav');
+                    else if (ones > 1) files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    return files;
+                }
+                files.push(`Prompt4/Prompt4_${tens}.wav`);
+                files.push('Prompt4/Prompt4_10.wav');
+                if (ones === 1) files.push('Prompt4/Prompt4_11-1.wav');
+                else if (ones > 1) files.push(`Prompt4/Prompt4_${ones}.wav`);
+                return files;
+            }
+            if (num > 0) files.push(`Prompt4/Prompt4_${num}.wav`);
+            return files;
+        }
+
         // WebSocket
         function connectWS() {
             if (window.wsSocket) {
-                // If exists and same url, no op (or close/reopen?)
-                // Just close and reopen to be safe if called from Settings
+                try { window.wsSocket.close(); } catch (e) { }
             }
 
             console.log("Connecting WS to", wsUrl);
@@ -384,11 +546,11 @@ $room = $_GET['room'] ?? 1; // Default fallback
 
             socket.onopen = () => console.log('Room WS Connected');
             socket.onmessage = (e) => {
-                console.log('Update', e.data);
+                console.log('WS Update Received', e.data);
                 fetchRoomQueue();
             };
             socket.onclose = () => {
-                console.log("WS Closed, retrying...");
+                console.log("WS Closed, retrying in 3s...");
                 setTimeout(connectWS, 3000);
             };
             socket.onerror = (e) => console.log("WS Error", e);
