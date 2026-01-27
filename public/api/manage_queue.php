@@ -20,7 +20,7 @@ try {
         // LIST Queues (Ordered by display_order)
         // Optional: filter by room, dept
         $room = $_GET['room'] ?? null;
-        $sql = "SELECT id, vn, patient_name, room_number, status, oqueue, display_order FROM queues WHERE status = 'waiting'";
+        $sql = "SELECT id, vn, patient_name, room_number, status, oqueue, display_order FROM queues WHERE status = 'waiting' AND DATE(created_at) = CURDATE()";
         $params = [];
 
         if ($room) {

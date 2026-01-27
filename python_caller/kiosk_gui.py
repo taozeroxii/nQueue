@@ -219,6 +219,39 @@ class KioskApp:
         except: pass
 
     def build_room_input(self, parent, room_id):
+        # Create nested Notebook for Scan vs List
+        notebook = ttk.Notebook(parent)
+        notebook.pack(fill='both', expand=True, padx=2, pady=2)
+        
+        # Tab 1: SCAN
+        scan_frame = tk.Frame(notebook, bg=THEME['bg_card'])
+        notebook.add(scan_frame, text=" Scan ")
+        self._build_scan_tab(scan_frame, room_id)
+        
+        # Tab 2: LIST
+        list_frame = tk.Frame(notebook, bg=THEME['bg_card'])
+        notebook.add(list_frame, text=" Manage ")
+        self._build_list_tab(list_frame, room_id)
+        
+        # Refresh list when switching to "Manage" tab
+        notebook.bind("<<NotebookTabChanged>>", lambda e: self._on_subtab_change(notebook, list_frame, room_id))
+
+    def _on_subtab_change(self, notebook, list_frame, room_id):
+        try:
+            current_tab = notebook.select()
+            if str(current_tab) == str(list_frame):
+                self.load_queue_list(list_frame, room_id)
+            else:
+                 # Focus back to input on Scan tab
+                 scan_tab = notebook.winfo_children()[0] # Scan is index 0
+                 for w in scan_tab.winfo_children():
+                     if isinstance(w, tk.Frame): # It's inside a center frame
+                         for child in w.winfo_children():
+                             if isinstance(child, tk.Entry):
+                                 child.focus()
+        except: pass
+
+    def _build_scan_tab(self, parent, room_id):
         # Center Content
         center = tk.Frame(parent, bg=THEME['bg_card'])
         center.place(relx=0.5, rely=0.5, anchor='center')
@@ -232,7 +265,115 @@ class KioskApp:
         
         # Focus handling
         entry.focus()
+
+    def _build_list_tab(self, parent, room_id):
+        # Layout: Toolbar (Top) + Treeview (Center)
+        toolbar = tk.Frame(parent, bg=THEME['bg_card'])
+        toolbar.pack(fill='x', padx=5, pady=2)
         
+        # Buttons
+        btn_refresh = tk.Button(toolbar, text="↻", command=lambda: self.load_queue_list(parent, room_id),
+                                bg=THEME['bg_main'], fg=THEME['text_main'], bd=0, width=3, cursor='hand2')
+        btn_refresh.pack(side='left', padx=2)
+        
+        btn_up = tk.Button(toolbar, text="▲", command=lambda: self.move_item(parent, room_id, 'up'),
+                           bg=THEME['bg_main'], fg=THEME['text_main'], bd=0, width=3, cursor='hand2')
+        btn_up.pack(side='left', padx=2)
+        
+        btn_down = tk.Button(toolbar, text="▼", command=lambda: self.move_item(parent, room_id, 'down'),
+                             bg=THEME['bg_main'], fg=THEME['text_main'], bd=0, width=3, cursor='hand2')
+        btn_down.pack(side='left', padx=2)
+        
+        btn_del = tk.Button(toolbar, text="🗑", command=lambda: self.delete_item(parent, room_id),
+                             bg=THEME['error'], fg='white', bd=0, width=3, cursor='hand2')
+        btn_del.pack(side='right', padx=2)
+
+        # Treeview
+        columns = ("q", "name")
+        tree = ttk.Treeview(parent, columns=columns, show='headings', selectmode='browse')
+        tree.heading("q", text="Q")
+        tree.column("q", width=50, anchor='center')
+        tree.heading("name", text="Name")
+        tree.column("name", width=150, anchor='w')
+        
+        # Style adjustment for Treeview
+        style_name = "Custom.Treeview"
+        self.style.configure(style_name, background=THEME['bg_main'], fieldbackground=THEME['bg_main'], foreground=THEME['text_main'], borderwidth=0)
+        self.style.map(style_name, background=[('selected', THEME['accent'])], foreground=[('selected', 'white')])
+        tree.configure(style=style_name)
+
+        tree.pack(fill='both', expand=True, padx=5, pady=2)
+        
+        # Store tree reference in parent for easy access
+        parent.tree = tree
+
+    def load_queue_list(self, parent, room_id):
+        tree = getattr(parent, 'tree', None)
+        if not tree: return
+        
+        # Clear existing
+        for item in tree.get_children():
+            tree.delete(item)
+            
+        threading.Thread(target=lambda: self._fetch_queue_data(tree, room_id)).start()
+
+    def _fetch_queue_data(self, tree, room_id):
+        try:
+            r = requests.get(f"{self.api_base}/manage_queue.php?room={room_id}", timeout=3)
+            data = r.json()
+            if data.get('success'):
+                # Update UI
+                self.root.after(0, lambda: self._update_tree(tree, data['data']))
+        except Exception as e:
+            print(f"Error fetching list: {e}")
+
+    def _update_tree(self, tree, items):
+        if not items: return
+        for item in items:
+            display = item.get('oqueue') or item.get('vn')
+            name = item.get('patient_name')
+            # Store ID in tags or values? Treeview iid can be item ID
+            tree.insert('', 'end', iid=item['id'], values=(display, name))
+
+    def move_item(self, parent, room_id, direction):
+        tree = getattr(parent, 'tree', None)
+        if not tree: return
+        
+        selected = tree.selection()
+        if not selected: return
+        
+        item_id = selected[0]
+        
+        threading.Thread(target=lambda: self._do_action(parent, room_id, 'move', item_id, direction)).start()
+
+    def delete_item(self, parent, room_id):
+        tree = getattr(parent, 'tree', None)
+        if not tree: return
+        
+        selected = tree.selection()
+        if not selected: return
+        
+        item_id = selected[0]
+        
+        if messagebox.askyesno("Confirm", "Delete this item?"):
+            threading.Thread(target=lambda: self._do_action(parent, room_id, 'delete', item_id)).start()
+
+    def _do_action(self, parent, room_id, action, item_id, direction=None):
+        try:
+            payload = {'action': action, 'id': item_id}
+            if direction: payload['direction'] = direction
+            
+            r = requests.post(f"{self.api_base}/manage_queue.php", json=payload, timeout=3)
+            data = r.json()
+            
+            if data.get('success'):
+                self.root.after(0, lambda: self.load_queue_list(parent, room_id))
+            else:
+                self.root.after(0, lambda: self.show_toast(f"Error: {data.get('message')}", False))
+                
+        except Exception as e:
+             self.root.after(0, lambda: self.show_toast("Network Error", False))
+
     def submit_queue(self, entry, room_id):
         val = entry.get().strip()
         if not val: return
