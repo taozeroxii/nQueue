@@ -1,0 +1,6 @@
+{
+    "api_url": "http://localhost/nQueue/public/api/update_status.php",
+    "ws_url": "ws://172.18.2.54:8765",
+    "api_base": "http://localhost/nQueue/public/api",
+    "room_id": 1
+}

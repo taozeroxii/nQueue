@@ -312,7 +312,8 @@ $room = $_GET['room'] ?? 1; // Default fallback
             }
         }
 
-        let flashTimeout;
+        let latestQueues = [];
+        let lastCallTime = 0;
 
         async function fetchRoomQueue() {
             if (!roomId) return;
@@ -321,15 +322,18 @@ $room = $_GET['room'] ?? 1; // Default fallback
                 const data = await res.json();
                 if (data.success) {
                     console.log("Queue Data:", data.data);
-                    updateDisplay(data.data);
+                    latestQueues = data.data;
+                    updateDisplay();
                 }
             } catch (e) { console.error("Fetch Error", e); }
         }
 
-        function updateDisplay(queues) {
-            // Fix: Find the LATEST called queue based on timestamp, not just the first one
+        function updateDisplay() {
+            const queues = latestQueues;
+            // Fix: Find the LATEST called queue based on timestamp
             const calledQueues = queues.filter(q => q.status === 'called');
             let current = null;
+
             if (calledQueues.length > 0) {
                 current = calledQueues.reduce((prev, curr) => {
                     const prevTime = new Date(prev.updated_at || prev.created_at).getTime();
@@ -337,6 +341,7 @@ $room = $_GET['room'] ?? 1; // Default fallback
                     return (prevTime > currTime) ? prev : curr;
                 });
             }
+
             const waiting = queues.filter(q => q.status === 'waiting');
 
             const qNum = document.getElementById('q-number');
@@ -377,40 +382,70 @@ $room = $_GET['room'] ?? 1; // Default fallback
                 if (window.lastFlashKey !== uniqueKey) {
                     window.lastFlashKey = uniqueKey;
 
-                    // Trigger Voice
+                    // New Call Detected
+                    lastCallTime = Date.now();
                     speakQueue(current);
 
-                    // Flash effect
+                    // Re-render in 11s to stop blinking
+                    setTimeout(updateDisplay, 11000);
+                }
+
+                // Determine Visual State based on Time
+                const isBlinking = (Date.now() - lastCallTime) < 11000;
+
+                if (isBlinking) {
+                    // Yellow / Blinking State
                     container.classList.remove('bg-indigo-900/20', 'border-white/20');
                     container.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
+
                     qNum.classList.remove('text-white');
                     qNum.classList.add('text-slate-900');
+
                     qName.classList.remove('text-white');
                     qName.classList.add('text-slate-800');
+
                     const titleEl = document.querySelector('#current-queue span');
                     if (titleEl) {
                         titleEl.classList.remove('text-indigo-200');
                         titleEl.classList.add('text-slate-800');
                     }
+                } else {
+                    // Normal State
+                    container.classList.add('bg-indigo-900/20', 'border-white/20');
+                    container.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
 
-                    clearTimeout(flashTimeout);
-                    flashTimeout = setTimeout(() => {
-                        container.classList.add('bg-indigo-900/20', 'border-white/20');
-                        container.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
-                        qNum.classList.add('text-white');
-                        qNum.classList.remove('text-slate-900');
-                        qName.classList.add('text-white');
-                        qName.classList.remove('text-slate-800');
-                        if (titleEl) {
-                            titleEl.classList.add('text-indigo-200');
-                            titleEl.classList.remove('text-slate-800');
-                        }
-                    }, 5000);
+                    qNum.classList.add('text-white');
+                    qNum.classList.remove('text-slate-900');
+
+                    qName.classList.add('text-white');
+                    qName.classList.remove('text-slate-800');
+
+                    const titleEl = document.querySelector('#current-queue span');
+                    if (titleEl) {
+                        titleEl.classList.add('text-indigo-200');
+                        titleEl.classList.remove('text-slate-800');
+                    }
                 }
 
                 qNum.innerText = newNum;
                 qName.innerText = maskName(current.patient_name);
             } else {
+                // No Active Queue
+                container.classList.add('bg-indigo-900/20', 'border-white/20');
+                container.classList.remove('bg-yellow-400', 'text-slate-900', 'border-yellow-200', 'animate-pulse', 'shadow-yellow-500/50');
+
+                qNum.classList.add('text-white');
+                qNum.classList.remove('text-slate-900');
+
+                qName.classList.add('text-white');
+                qName.classList.remove('text-slate-800');
+
+                const titleEl = document.querySelector('#current-queue span');
+                if (titleEl) {
+                    titleEl.classList.add('text-indigo-200');
+                    titleEl.classList.remove('text-slate-800');
+                }
+
                 qNum.innerText = "-";
                 qName.innerText = "No Active Queue";
             }
@@ -534,28 +569,34 @@ $room = $_GET['room'] ?? 1; // Default fallback
             return files;
         }
 
-        // WebSocket
+        // WS Init
         function connectWS() {
             if (window.wsSocket) {
-                try { window.wsSocket.close(); } catch (e) { }
+                if (window.wsSocket.readyState === WebSocket.OPEN || window.wsSocket.readyState === WebSocket.CONNECTING) return;
             }
-
-            console.log("Connecting WS to", wsUrl);
+            console.log("Connecting to WS:", wsUrl);
             const socket = new WebSocket(wsUrl);
             window.wsSocket = socket;
 
-            socket.onopen = () => console.log('Room WS Connected');
-            socket.onmessage = (e) => {
-                console.log('WS Update Received', e.data);
-                fetchRoomQueue();
+            socket.onopen = function () {
+                console.log('Connected');
+                document.body.style.borderTop = "4px solid #10b981";
             };
-            socket.onclose = () => {
-                console.log("WS Closed, retrying in 3s...");
+            socket.onmessage = function (event) {
+                try {
+                    const payload = JSON.parse(event.data);
+                    if (payload.event === 'recall' && payload.data) {
+                        speakQueue(payload.data);
+                    }
+                    fetchRoomQueue();
+                } catch (e) { fetchRoomQueue(); }
+            };
+            socket.onclose = function () {
+                document.body.style.borderTop = "4px solid #ef4444";
                 setTimeout(connectWS, 3000);
             };
-            socket.onerror = (e) => console.log("WS Error", e);
         }
-
+        connectWS();
         init();
     </script>
 </body>
