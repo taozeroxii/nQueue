@@ -37,7 +37,7 @@ try {
         $next = $nStmt->fetch();
 
         if ($next) {
-            $updateSql = "UPDATE queues SET status = 'called' WHERE id = :id";
+            $updateSql = "UPDATE queues SET status = 'called', call_at = NOW() WHERE id = :id";
             $uStmt = $mysql->prepare($updateSql);
             $uStmt->execute([':id' => $next['id']]);
 
@@ -61,7 +61,7 @@ try {
         }
 
         // 2. Set specific ID to called
-        $updateSql = "UPDATE queues SET status = 'called' WHERE id = :id";
+        $updateSql = "UPDATE queues SET status = 'called', call_at = NOW() WHERE id = :id";
         $uStmt = $mysql->prepare($updateSql);
         $uStmt->execute([':id' => $id]);
 
@@ -98,7 +98,17 @@ try {
 
     } elseif ($id && $status) {
         // Manual update specific ID
-        $sql = "UPDATE queues SET status = :status WHERE id = :id";
+        // Determine timestamp column to update
+        $timestampUpdate = "";
+        if ($status === 'xray') {
+            $timestampUpdate = ", xray_at = NOW()";
+        } elseif ($status === 'lab') {
+            $timestampUpdate = ", lab_at = NOW()";
+        } elseif ($status === 'called') {
+            $timestampUpdate = ", call_at = NOW()";
+        }
+
+        $sql = "UPDATE queues SET status = :status $timestampUpdate WHERE id = :id";
         $stmt = $mysql->prepare($sql);
         $stmt->execute([':status' => $status, ':id' => $id]);
 
