@@ -44,7 +44,6 @@ class MiniCallerApp:
         self.config = self.load_config()
         self.room_id = self.config.get('room_id', 1)
         self.api_base = self.config.get('api_base', "http://localhost/nQueue/public/api")
-        self.current_queue_id = None
         
         self.setup_styles()
         self.create_ui()
@@ -115,26 +114,20 @@ class MiniCallerApp:
         btn_frame.columnconfigure(2, weight=1)
 
         # Helper for Hover Buttons
-        def mk_btn(txt, cmd, bg, h_bg, row, col, colspan=1, state='normal'):
+        def mk_btn(txt, cmd, bg, h_bg, row, col, colspan=1):
             b = tk.Button(btn_frame, text=txt, command=cmd,
-                          bg=bg if state=='normal' else '#555', fg='white',
+                          bg=bg, fg='white',
                           font=("Segoe UI", 8, "bold"),
-                          bd=0, relief='flat', cursor='hand2' if state=='normal' else 'arrow',
-                          state=state)
-            b.grid(row=row, column=col, columnspan=colspan, sticky='nsew', padx=1, pady=1, ipady=8) 
-            if state == 'normal':
-                b.bind("<Enter>", lambda e: b.config(bg=h_bg))
-                b.bind("<Leave>", lambda e: b.config(bg=bg))
+                          bd=0, relief='flat', cursor='hand2')
+            b.grid(row=row, column=col, columnspan=colspan, sticky='nsew', padx=1, pady=1, ipady=12) # Increased height
+            b.bind("<Enter>", lambda e: b.config(bg=h_bg))
+            b.bind("<Leave>", lambda e: b.config(bg=bg))
             return b
 
-        # Row 0: Lab and X-ray (Initially Disabled)
-        self.btn_lab = mk_btn("🧪 To Lab", self.send_to_lab, THEME['btn_sec'], THEME['btn_sec_h'], 0, 0, state='disabled')
-        self.btn_xray = mk_btn("☢ To X-ray", self.send_to_xray, THEME['btn_sec'], THEME['btn_sec_h'], 0, 1, state='disabled')
-        self.btn_list = mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 0, 2)
-
-        # Row 1: Main Controls
-        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 1, 0)
-        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 1, 1, colspan=2)
+        # Single Row Layout
+        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 0, 0)
+        mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 0, 1)
+        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 0, 2)
 
     # --- Logic Section (Same Logic) ---
 
@@ -203,14 +196,6 @@ class MiniCallerApp:
 
     def recall_prev(self):
         threading.Thread(target=lambda: self._post_action('recall')).start()
-
-    def send_to_lab(self):
-        if self.current_queue_id:
-            threading.Thread(target=lambda: self._update_status(self.current_queue_id, 'lab')).start()
-
-    def send_to_xray(self):
-        if self.current_queue_id:
-            threading.Thread(target=lambda: self._update_status(self.current_queue_id, 'xray')).start()
 
     def set_status(self, status):
         threading.Thread(target=lambda: self._do_set_status_room_active(status)).start()
@@ -340,33 +325,11 @@ class MiniCallerApp:
                         found = True
                         break
             if not found:
-                 self.root.after(0, self.clear_ui)
+                 self.root.after(0, lambda: [self.lbl_status.config(text="Standby"), self.lbl_q.config(text="-")])
         except: pass
-
-    def clear_ui(self):
-        self.lbl_status.config(text="Standby")
-        self.lbl_q.config(text="-")
-        self.current_queue_id = None
-        self._toggle_action_buttons(False)
-
-    def _toggle_action_buttons(self, enable):
-        state = 'normal' if enable else 'disabled'
-        cursor = 'hand2' if enable else 'arrow'
-        bg = THEME['btn_sec'] if enable else '#555'
-        
-        for b in [self.btn_lab, self.btn_xray]:
-            b.config(state=state, cursor=cursor, bg=bg)
-            if enable:
-                b.bind("<Enter>", lambda e, b=b: b.config(bg=THEME['btn_sec_h']))
-                b.bind("<Leave>", lambda e, b=b: b.config(bg=THEME['btn_sec']))
-            else:
-                b.unbind("<Enter>")
-                b.unbind("<Leave>")
 
     def update_ui(self, data):
         if str(data.get('room_number')) == str(self.room_id):
-             self.current_queue_id = data.get('id')
-             self._toggle_action_buttons(True)
              name = data.get('patient_name', '')
              self.lbl_q.config(text=data.get('oqueue') or data.get('vn', '-'))
              self.lbl_status.config(text=name[:18] + ".." if len(name)>18 else name)
