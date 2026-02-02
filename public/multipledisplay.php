@@ -274,7 +274,7 @@
 
         <!-- Bottom: Lab & X-Ray Status -->
         <div
-            class="fixed bottom-0 left-0 right-0 h-32 bg-slate-900/95 border-t border-white/10 backdrop-blur-xl z-40 grid grid-cols-2 gap-px">
+            class="fixed bottom-0 left-0 right-0 h-32 bg-white border-t border-slate-200 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-40 grid grid-cols-2 gap-px">
             <!-- Lab Section -->
             <div class="relative overflow-hidden group border-r border-slate-200">
                 <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
@@ -286,7 +286,7 @@
                     <div id="lab-list"
                         class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
                         <!-- Dynamic Items -->
-                        <div class="text-white/30 italic">No patients</div>
+                        <div class="text-slate-400 italic">No patients</div>
                     </div>
                 </div>
             </div>
@@ -301,24 +301,15 @@
                     <div id="xray-list"
                         class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
                         <!-- Dynamic Items -->
-                        <div class="text-white/30 italic">No patients</div>
+                        <div class="text-slate-400 italic">No patients</div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Update Bottom Bar Container -->
-    <style>
-        #bottom-bar {
-            background: white !important;
-            border-top: 1px solid #e2e8f0;
-        }
-    </style>
     <script>
-        document.querySelector('.fixed.bottom-0').id = 'bottom-bar';
-        document.querySelector('.fixed.bottom-0').classList.remove('bg-slate-900/95', 'border-white/10', 'backdrop-blur-xl');
-        document.querySelector('.fixed.bottom-0').classList.add('bg-white', 'shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]');
+        // Style fix applied directly to HTML
     </script>
 
 
@@ -588,7 +579,7 @@
                     <div class="mt-4 w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="bg-hospital-light px-4 py-2 border-b border-blue-100 flex justify-between items-center">
                              <div class="flex items-center gap-2">
-                                <span class="text-sm font-bold text-hospital-blue uppercase tracking-wider">คิวที่เรียกแล้ว</span>
+                                <span class="text-sm font-bold text-hospital-blue uppercase tracking-wider">คิวที่รอเรียก</span>
                              </div>
                              <span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${totalWaiting}</span>
                         </div>
@@ -628,7 +619,6 @@
                              <!-- Header Room Name -->
                              <div class="w-full ${headerClass} py-4 px-2 transition-colors duration-300">
                                 <div class="flex flex-col items-center">
-                                    <span class="text-lg opacity-90 font-medium">หมายเลขที่เรียกเข้ารับบริการ</span>
                                     <h2 class="text-4xl font-black tracking-tight mt-1">ห้องตรวจ ${room.room_name}</h2>
                                 </div>
                              </div>
@@ -676,7 +666,7 @@
             const currentRooms = roomCards.slice(startC, startC + CALLED_PAGE_SIZE);
 
             container.innerHTML = currentRooms.join('') || `
-                <div class="col-span-full h-40 flex items-center justify-center text-white/20 text-xl font-bold border-2 border-dashed border-white/10 rounded-3xl">Loading Rooms...</div>
+                <div class="col-span-full h-40 flex items-center justify-center text-slate-400 text-xl font-bold border-2 border-dashed border-slate-300 rounded-3xl">Loading Rooms...</div>
             `;
             renderLabXray();
         }
@@ -686,13 +676,13 @@
             const xrays = allQueues.filter(q => q.status === 'xray');
 
             const makeItem = (q, bg) => `
-                <div class="flex flex-col items-center justify-center bg-white/10 px-6 py-3 rounded-2xl min-w-[140px] border border-white/10 shadow-lg animate-pulse-slow">
-                     <span class="text-2xl font-black text-white">${q.oqueue || q.vn}</span>
-                     <span class="text-xs text-white/60 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                <div class="flex flex-col items-center justify-center bg-white px-6 py-3 rounded-2xl min-w-[140px] border border-slate-200 shadow-lg animate-pulse-slow">
+                     <span class="text-2xl font-black text-slate-800">${q.oqueue || q.vn}</span>
+                     <span class="text-xs text-slate-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
                 </div>
             `;
-            labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
-            xrayListEl.innerHTML = xrays.length ? xrays.map(q => makeItem(q)).join('') : '<div class="text-white/20 italic pl-4">No patients</div>';
+            labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
+            xrayListEl.innerHTML = xrays.length ? xrays.map(q => makeItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
         }
 
         let audioUnlocked = false;
@@ -748,7 +738,7 @@
             const files = [
                 'Prompt4/Prompt4_Number.wav',
                 ...numberFiles,
-                'Prompt4/Prompt4_Service.wav',
+                'Prompt4/station_old.wav',
                 ...roomFiles,
                 'Prompt4/Prompt4_Sir.wav'
             ];

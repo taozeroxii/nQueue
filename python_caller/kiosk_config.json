@@ -1,0 +1,5 @@
+{
+    "api_base": "http://localhost/nQueue/public/api",
+    "selected_dept": "OPD",
+    "selected_room": 1
+}
