@@ -573,7 +573,7 @@
                 const activeCall = allQueues.find(q => q.status === 'called' && String(q.room_number) === String(room.id));
                 const waitingForThisRoom = allQueues.filter(q => q.status === 'waiting' && String(q.room_number) === String(room.id));
                 const totalWaiting = waitingForThisRoom.length;
-                const next5 = waitingForThisRoom.slice(0, 3);
+                const next5 = waitingForThisRoom.slice(0, 5);
 
                 const waitingHtml = next5.length > 0 ? `
                     <div class="mt-4 w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -583,11 +583,10 @@
                              </div>
                              <span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${totalWaiting}</span>
                         </div>
-                        <div class="grid grid-cols-1 divide-y divide-slate-100">
+                        <div class="grid grid-cols-5 divide-x divide-slate-100">
                             ${next5.map(q => `
-                                <div class="flex items-center justify-between px-4 py-3 group hover:bg-blue-50 transition">
-                                    <span class="font-bold text-slate-700 text-xl tracking-tight group-hover:text-hospital-blue transition">${q.oqueue || q.vn}</span>
-                                    <!-- <span class="text-xs text-slate-400">${maskName(q.patient_name)}</span> -->
+                                <div class="flex flex-col items-center justify-center py-4 px-1 group hover:bg-blue-50 transition">
+                                    <span class="font-black text-slate-700 text-4xl tracking-tighter group-hover:text-hospital-blue transition">${q.oqueue || q.vn}</span>
                                 </div>
                             `).join('')}
                         </div>
