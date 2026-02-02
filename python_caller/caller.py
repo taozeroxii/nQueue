@@ -9,9 +9,9 @@ import websockets
 
 # --- Premium Configuration & Theme ---
 DEFAULT_CONFIG = {
-    'api_url': "http://localhost/nQueue/public/api/update_status.php",
-    'ws_url': "ws://localhost:8765",
-    'api_base': "http://localhost/nQueue/public/api", 
+    'api_url': "http://172.18.2.54/nQueue/public/api/update_status.php",
+    'ws_url': "ws://172.18.2.54:8765",
+    'api_base': "http://172.18.2.54/nQueue/public/api", 
     'room_id': 1
 }
 
@@ -43,7 +43,7 @@ class MiniCallerApp:
         
         self.config = self.load_config()
         self.room_id = self.config.get('room_id', 1)
-        self.api_base = self.config.get('api_base', "http://localhost/nQueue/public/api")
+        self.api_base = self.config.get('api_base', "http://172.18.2.54/nQueue/public/api")
         self.current_queue_id = None
         
         self.setup_styles()
@@ -330,7 +330,7 @@ class MiniCallerApp:
     def _do_fetch_status(self):
         try:
             # Change limit 1 -> 10 to fix update issue
-            r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=10", timeout=2)
+            r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=500", timeout=2)
             data = r.json()
             found = False
             if data['success']:
@@ -341,7 +341,9 @@ class MiniCallerApp:
                         break
             if not found:
                  self.root.after(0, self.clear_ui)
-        except: pass
+        except Exception as e:
+            self.root.after(0, lambda: self.lbl_status.config(text="Connection Error", fg="red"))
+            print(f"Fetch Error: {e}")
 
     def clear_ui(self):
         self.lbl_status.config(text="Standby")
@@ -379,7 +381,15 @@ class MiniCallerApp:
                         while True:
                             msg = await websocket.recv()
                             try:
-                                if 'room' in json.loads(msg) and str(json.loads(msg)['room']) == str(self.room_id): self.refresh_queue()
+                                data = json.loads(msg)
+                                # 1. Standard: {"event":"queue_update", "room":"1"}
+                                if 'room' in data and str(data['room']) == str(self.room_id):
+                                    self.refresh_queue()
+                                # 2. Recall: {"event":"recall", "data": {"room_number": "1", ...}}
+                                elif data.get('event') == 'recall' and 'data' in data:
+                                    inner = data['data']
+                                    if str(inner.get('room_number')) == str(self.room_id):
+                                        self.refresh_queue()
                             except: pass
                 except: await asyncio.sleep(5)
         loop = asyncio.new_event_loop()
