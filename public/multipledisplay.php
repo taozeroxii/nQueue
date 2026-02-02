@@ -624,7 +624,7 @@
 
                              <!-- Main Calling Number -->
                              <div class="flex-1 flex flex-col justify-center items-center w-full px-4 py-8 relative z-10 bg-white">
-                                <h3 class="text-[10rem] leading-none font-black tracking-tighter ${numClass} transition-all duration-300 font-mono">${activeCall.oqueue || activeCall.vn}</h3>
+                                <h3 class="text-[13rem] leading-none font-black tracking-tighter ${numClass} transition-all duration-300 font-mono scale-110 origin-center">${activeCall.oqueue || activeCall.vn}</h3>
                                 
                                 <div class="mt-8 bg-slate-100 rounded-full px-8 py-3 border border-slate-200 max-w-full">
                                     <p class="text-4xl font-bold text-slate-700 truncate">${maskName(activeCall.patient_name)}</p>
