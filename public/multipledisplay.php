@@ -47,9 +47,19 @@
                         brand: {
                             50: '#f0f9ff',
                             100: '#e0f2fe',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
                             500: '#0ea5e9',
                             600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
                             900: '#0c4a6e',
+                        },
+                        hospital: {
+                            blue: '#0056b3',    /* Deep Blue like in the image */
+                            light: '#e6f2ff',   /* Very light blue bg */
+                            text: '#002e5d',    /* Dark Navy for text */
+                            accent: '#007bff'
                         }
                     }
                 }
@@ -58,41 +68,44 @@
     </script>
 </head>
 
-<body class="bg-slate-900 min-h-screen text-white overflow-hidden">
+<body class="bg-blue-50/50 min-h-screen text-slate-800 overflow-hidden">
 
     <!-- Top Header -->
     <!-- Top Header -->
     <header
-        class="p-6 flex justify-between items-center bg-slate-900/90 backdrop-blur-md border-b border-white/10 relative z-50">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-brand-400" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
+        class="p-4 px-8 flex justify-between items-center bg-white shadow-md border-b-4 border-hospital-blue relative z-50">
+        <div class="flex items-center gap-6">
+            <div
+                class="w-16 h-16 bg-hospital-blue/10 rounded-full flex items-center justify-center p-3 shadow-sm border border-hospital-blue/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-hospital-blue" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
             </div>
             <div class="cursor-pointer group" onclick="openSettings()">
-                <h1 id="dept-name" class="text-xl font-bold text-white group-hover:text-brand-300 transition">
-                    คิวตรวจโรคทั่วไป</h1>
-                <p id="dept-sub" class="text-brand-200/60 text-sm group-hover:text-brand-300/60 transition">General OPD
-                    Queue</p>
+                <h1 id="dept-name"
+                    class="text-4xl font-black text-hospital-blue group-hover:text-hospital-accent transition tracking-tight">
+                    โรงพยาบาลบุรีรัมย์</h1>
+                <p id="dept-sub"
+                    class="text-slate-500 font-semibold text-xl group-hover:text-hospital-blue transition mt-1">
+                    คิวตรวจโรคทั่วไป</p>
             </div>
         </div>
         <div class="text-right">
-            <div id="clock" class="text-2xl font-mono font-bold tracking-widest text-brand-50">00:00</div>
-            <div id="date" class="text-brand-100/60 text-sm">...</div>
+            <div id="clock" class="text-5xl font-black tracking-widest text-hospital-text font-mono">00:00</div>
+            <div id="date" class="text-slate-500 font-medium text-lg mt-1">...</div>
         </div>
     </header>
 
     <!-- Settings Modal -->
     <div id="settings-modal"
-        class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[100] backdrop-blur-sm">
+        class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-[100] backdrop-blur-sm">
         <div
-            class="bg-slate-800 p-8 rounded-3xl w-full max-w-md border border-white/10 shadow-2xl transform scale-100 transition-all">
-            <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-400" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
+            class="bg-white p-8 rounded-3xl w-full max-w-md border border-slate-200 shadow-2xl transform scale-100 transition-all">
+            <h2 class="text-2xl font-black text-hospital-blue mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-hospital-accent" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -103,62 +116,63 @@
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-slate-400 mb-2 text-sm">Department Name (Main Title)</label>
+                    <label class="block text-slate-500 mb-2 text-sm font-semibold">Department Name (Main Title)</label>
                     <input type="text" id="input-dept-name"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-slate-400"
                         placeholder="e.g. แผนกอายุรกรรม">
                 </div>
 
                 <!-- NOTE: TTS Prefix/Middle removed/disabled for File-mode as it uses fixed files -->
-                <div class="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                    <p class="text-xs text-slate-400 text-center">Note: This display uses File-based Audio (Prompt4)</p>
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <p class="text-xs text-blue-600 text-center font-medium">Note: This display uses File-based Audio
+                        (Prompt4)</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-slate-400 mb-2 text-sm">Filter by Department</label>
+                        <label class="block text-slate-500 mb-2 text-sm font-semibold">Filter by Department</label>
                         <select id="input-dept-filter" onchange="onDeptFilterChange()"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none">
                             <option value="">Show All</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-2 text-sm">Filter by Room</label>
+                        <label class="block text-slate-500 mb-2 text-sm font-semibold">Filter by Room</label>
                         <select id="input-room-filter"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none">
                             <option value="">Show All Rooms</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-slate-400 mb-2 text-sm">Subtitle</label>
+                    <label class="block text-slate-500 mb-2 text-sm font-semibold">Subtitle</label>
                     <input type="text" id="input-dept-sub"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-slate-400"
                         placeholder="e.g. Room 1-5">
                 </div>
 
                 <div>
-                    <label class="block text-slate-400 mb-2 text-sm">Call Repetitions</label>
+                    <label class="block text-slate-500 mb-2 text-sm font-semibold">Call Repetitions</label>
                     <input type="number" id="input-tts-repeat" min="1" max="5"
-                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-slate-400"
                         placeholder="Default: 1">
                 </div>
 
-                <div class="border-t border-slate-700 pt-4 mt-4">
-                    <h3 class="text-white font-semibold mb-3">Connection Settings</h3>
+                <div class="border-t border-slate-100 pt-4 mt-4">
+                    <h3 class="text-slate-800 font-bold mb-3">Connection Settings</h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-slate-400 mb-2 text-sm">API Base URL</label>
+                            <label class="block text-slate-500 mb-2 text-sm font-semibold">API Base URL</label>
                             <input type="text" id="input-api-base"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-slate-400"
                                 placeholder="e.g. http://localhost/nQueue/public/">
-                            <p class="text-xs text-slate-500 mt-1">Leave empty for relative path (default)</p>
+                            <p class="text-xs text-slate-400 mt-1">Leave empty for relative path (default)</p>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-2 text-sm">WebSocket URL</label>
+                            <label class="block text-slate-500 mb-2 text-sm font-semibold">WebSocket URL</label>
                             <input type="text" id="input-ws-url"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:border-brand-500 focus:outline-none placeholder-slate-600"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none placeholder-slate-400"
                                 placeholder="e.g. ws://localhost:8765">
                         </div>
                     </div>
@@ -167,9 +181,9 @@
 
             <div class="flex justify-end gap-3 mt-8">
                 <button onclick="closeSettings()"
-                    class="px-4 py-2 text-slate-400 hover:text-white transition">Cancel</button>
+                    class="px-4 py-2 text-slate-500 hover:text-slate-800 transition font-medium">Cancel</button>
                 <button onclick="saveSettings()"
-                    class="px-6 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-lg shadow-brand-500/20 transition-all font-semibold">Save
+                    class="px-6 py-2 bg-hospital-blue hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/30 transition-all font-semibold">Save
                     Changes</button>
             </div>
         </div>
@@ -177,17 +191,17 @@
 
     <!-- Sound Enable Overlay (Autoplay Policy) -->
     <div id="sound-overlay"
-        class="fixed inset-0 bg-slate-900/90 z-[70] flex flex-col items-center justify-center cursor-pointer"
+        class="fixed inset-0 bg-white/90 z-[70] flex flex-col items-center justify-center cursor-pointer backdrop-blur-sm"
         onclick="unlockAudio()">
-        <div class="bg-brand-600 p-8 rounded-full animate-bounce mb-4 shadow-lg shadow-brand-500/50">
+        <div class="bg-hospital-blue p-8 rounded-full animate-bounce mb-4 shadow-xl shadow-blue-500/30">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
         </div>
-        <h1 class="text-3xl font-bold text-white mb-2">Click Anywhere to Enable Sound</h1>
-        <p class="text-slate-400">Browser policy requires interaction to play audio</p>
+        <h1 class="text-3xl font-black text-slate-800 mb-2">Click Anywhere to Enable Sound</h1>
+        <p class="text-slate-500">Browser policy requires interaction to play audio</p>
     </div>
 
     <!-- Kiosk Auto-Init Script -->
@@ -235,14 +249,15 @@
     </script>
 
     <!-- Initial Department Selection Overlay -->
-    <div id="dept-select-overlay" class="fixed inset-0 bg-slate-900 z-[60] hidden flex-col items-center justify-center">
+    <div id="dept-select-overlay" class="fixed inset-0 bg-slate-50 z-[60] hidden flex-col items-center justify-center">
         <div class="text-center max-w-md w-full p-6">
-            <h1 class="text-4xl font-bold text-white mb-2">Welcome</h1>
-            <p class="text-slate-400 mb-8">Please select a department to display</p>
+            <h1 class="text-4xl font-black text-hospital-text mb-2">Welcome</h1>
+            <p class="text-slate-500 mb-8 font-medium">Please select a department to display</p>
             <div id="dept-selection-list" class="flex flex-col gap-3">
                 <!-- Buttons injected here -->
             </div>
-            <button onclick="selectDept('')" class="mt-6 text-slate-500 hover:text-white underline text-sm">Show All
+            <button onclick="selectDept('')"
+                class="mt-6 text-slate-400 hover:text-hospital-blue underline text-sm transition font-semibold">Show All
                 Departments</button>
         </div>
     </div>
@@ -261,12 +276,12 @@
         <div
             class="fixed bottom-0 left-0 right-0 h-32 bg-slate-900/95 border-t border-white/10 backdrop-blur-xl z-40 grid grid-cols-2 gap-px">
             <!-- Lab Section -->
-            <div class="relative overflow-hidden group">
-                <div class="absolute inset-0 bg-indigo-900/20 group-hover:bg-indigo-900/30 transition"></div>
-                <div class="h-full flex items-center px-8 gap-6">
-                    <div class="flex flex-col justify-center shrink-0">
-                        <span class="text-indigo-400 font-bold text-sm tracking-widest uppercase">Laboratory</span>
-                        <h3 class="text-3xl font-bold text-white">รอ Lab</h3>
+            <div class="relative overflow-hidden group border-r border-slate-200">
+                <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
+                <div class="h-full flex items-center px-8 gap-6 relative z-10">
+                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-6">
+                        <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Laboratory</span>
+                        <h3 class="text-3xl font-black text-hospital-text">รอ Lab</h3>
                     </div>
                     <div id="lab-list"
                         class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
@@ -276,12 +291,12 @@
                 </div>
             </div>
             <!-- X-Ray Section -->
-            <div class="relative overflow-hidden group border-l border-white/10">
-                <div class="absolute inset-0 bg-fuchsia-900/20 group-hover:bg-fuchsia-900/30 transition"></div>
-                <div class="h-full flex items-center px-8 gap-6">
-                    <div class="flex flex-col justify-center shrink-0">
-                        <span class="text-fuchsia-400 font-bold text-sm tracking-widest uppercase">Radiology</span>
-                        <h3 class="text-3xl font-bold text-white">รอ X-Ray</h3>
+            <div class="relative overflow-hidden group">
+                <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
+                <div class="h-full flex items-center px-8 gap-6 relative z-10">
+                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-6">
+                        <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Radiology</span>
+                        <h3 class="text-3xl font-black text-hospital-text">รอ X-Ray</h3>
                     </div>
                     <div id="xray-list"
                         class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
@@ -292,6 +307,20 @@
             </div>
         </div>
     </main>
+
+    <!-- Update Bottom Bar Container -->
+    <style>
+        #bottom-bar {
+            background: white !important;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+    <script>
+        document.querySelector('.fixed.bottom-0').id = 'bottom-bar';
+        document.querySelector('.fixed.bottom-0').classList.remove('bg-slate-900/95', 'border-white/10', 'backdrop-blur-xl');
+        document.querySelector('.fixed.bottom-0').classList.add('bg-white', 'shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]');
+    </script>
+
 
     <script>
         // State
@@ -431,7 +460,7 @@
                     if (currentDeptFilter) inputFilter.value = currentDeptFilter;
 
                     deptListEl.innerHTML = depts.map(d => `
-                        <button onclick="selectDept('${d}')" class="w-full py-4 px-6 bg-slate-800 hover:bg-brand-600 text-white rounded-xl text-xl font-bold transition border border-slate-700 hover:border-brand-500">
+                        <button onclick="selectDept('${d}')" class="w-full py-4 px-6 bg-white hover:bg-hospital-blue text-slate-700 hover:text-white rounded-xl text-xl font-bold transition border border-slate-200 hover:border-hospital-accent shadow-md hover:shadow-xl hover:-translate-y-1">
                             ${d}
                         </button>
                     `).join('');
@@ -556,25 +585,25 @@
                 const next5 = waitingForThisRoom.slice(0, 3);
 
                 const waitingHtml = next5.length > 0 ? `
-                    <div class="mt-4 w-full bg-slate-900/50 rounded-xl p-3 border border-white/5 backdrop-blur-sm">
-                        <div class="flex justify-between items-center mb-2 px-1">
+                    <div class="mt-4 w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="bg-hospital-light px-4 py-2 border-b border-blue-100 flex justify-between items-center">
                              <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                <span class="text-xl font-bold text-slate-300 uppercase tracking-wider">รอเรียก (${totalWaiting})</span>
+                                <span class="text-sm font-bold text-hospital-blue uppercase tracking-wider">คิวที่เรียกแล้ว</span>
                              </div>
+                             <span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${totalWaiting}</span>
                         </div>
-                        <div class="grid grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 divide-y divide-slate-100">
                             ${next5.map(q => `
-                                <div class="flex flex-col items-center justify-center text-sm bg-indigo-900/40 px-3 py-4 rounded-xl border border-white/10 shadow-sm relative overflow-hidden group">
-                                    <div class="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition"></div>
-                                    <span class="font-black text-white text-5xl tracking-tighter relative z-10">${q.oqueue || q.vn}</span>
+                                <div class="flex items-center justify-between px-4 py-3 group hover:bg-blue-50 transition">
+                                    <span class="font-bold text-slate-700 text-xl tracking-tight group-hover:text-hospital-blue transition">${q.oqueue || q.vn}</span>
+                                    <!-- <span class="text-xs text-slate-400">${maskName(q.patient_name)}</span> -->
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 ` : `
-                    <div class="mt-4 w-full bg-slate-900/30 rounded-xl p-4 border border-white/5 text-center">
-                         <span class="text-xs font-semibold text-slate-500">No Queue</span>
+                    <div class="mt-4 w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
+                         <span class="text-xs font-semibold text-slate-400">ไม่มีคิวรอ</span>
                     </div>
                 `;
 
@@ -582,22 +611,34 @@
                 if (activeCall) {
                     const lastTime = lastCallTimes[room.id] || 0;
                     const isBlinking = (Date.now() - lastTime) < 10000;
+
+                    // Card Container Styles
                     const containerClass = isBlinking
-                        ? "bg-yellow-400 border-yellow-200 shadow-yellow-500/50 animate-pulse text-slate-900"
-                        : "bg-indigo-900/20 border-white/20 shadow-indigo-900/40 text-white";
-                    const titleClass = isBlinking ? "text-slate-800" : "text-emerald-100";
-                    const vnClass = isBlinking ? "text-black" : "text-white";
-                    const nameBgClass = isBlinking ? "bg-black/10" : "bg-black/20";
-                    const nameTextClass = isBlinking ? "text-slate-900" : "text-white";
+                        ? "bg-yellow-50 border-yellow-400 ring-4 ring-yellow-200 shadow-xl scale-[1.02]"
+                        : "bg-white border-slate-200 shadow-lg hover:shadow-xl hover:border-blue-300";
+
+                    // Header Styles
+                    const headerClass = isBlinking ? "bg-yellow-400 text-slate-900" : "bg-hospital-blue text-white";
+
+                    // Number Styles
+                    const numClass = isBlinking ? "text-slate-900 scale-110" : "text-hospital-text";
 
                     cardContent = `
-                        <div class="relative overflow-hidden rounded-3xl ${containerClass} p-4 flex flex-col items-center justify-between text-center shadow-lg border-4 min-h-[450px]">
-                             <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                             <div class="flex-1 flex flex-col justify-center items-center w-full z-10">
-                                <span class="text-3xl font-bold uppercase tracking-wider mb-2 opacity-90 ${titleClass}">ห้องตรวจ ${room.room_name}</span>
-                                <h3 class="text-[14rem] font-black tracking-tighter my-2 leading-none ${vnClass}">${activeCall.oqueue || activeCall.vn}</h3>
-                                <div class="mt-2 ${nameBgClass} rounded-full px-4 py-1.5 backdrop-blur-sm max-w-full">
-                                    <p class="text-4xl font-medium truncate ${nameTextClass}">${maskName(activeCall.patient_name)}</p>
+                        <div class="relative overflow-hidden rounded-2xl ${containerClass} flex flex-col items-center justify-between text-center transition-all duration-300 ease-out min-h-[400px] border">
+                             <!-- Header Room Name -->
+                             <div class="w-full ${headerClass} py-4 px-2 transition-colors duration-300">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-lg opacity-90 font-medium">หมายเลขที่เรียกเข้ารับบริการ</span>
+                                    <h2 class="text-4xl font-black tracking-tight mt-1">ห้องตรวจ ${room.room_name}</h2>
+                                </div>
+                             </div>
+
+                             <!-- Main Calling Number -->
+                             <div class="flex-1 flex flex-col justify-center items-center w-full px-4 py-8 relative z-10 bg-white">
+                                <h3 class="text-[10rem] leading-none font-black tracking-tighter ${numClass} transition-all duration-300 font-mono">${activeCall.oqueue || activeCall.vn}</h3>
+                                
+                                <div class="mt-8 bg-slate-100 rounded-full px-8 py-3 border border-slate-200 max-w-full">
+                                    <p class="text-4xl font-bold text-slate-700 truncate">${maskName(activeCall.patient_name)}</p>
                                 </div>
                              </div>
                         </div>
@@ -605,17 +646,21 @@
                 } else {
                     if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
                     cardContent = `
-                        <div class="bg-slate-800/60 p-4 rounded-3xl border-2 border-slate-700/50 flex flex-col items-center justify-center text-center opacity-75 min-h-[450px]">
-                            <span class="text-lg text-slate-400 font-semibold block truncate">ห้อง ${room.room_name}</span>
-                            <h3 class="text-5xl font-bold text-slate-600 tracking-tight my-4">ว่าง</h3>
-                            <p class="text-sm text-slate-500 truncate">รอเรียก...</p>
+                        <div class="bg-white p-0 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center opacity-80 min-h-[400px] hover:opacity-100 transition-opacity">
+                             <div class="w-full bg-slate-100 py-4 border-b border-slate-200">
+                                <span class="text-2xl text-slate-500 font-bold block truncate">ห้อง ${room.room_name}</span>
+                             </div>
+                             <div class="flex-1 flex flex-col justify-center items-center">
+                                <h3 class="text-6xl font-black text-slate-300 tracking-tight my-4">ว่าง</h3>
+                                <p class="text-lg text-slate-400">รอเรียกคิว...</p>
+                             </div>
                         </div>
                     `;
                 }
 
                 if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
                 return `
-                    <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-4">
                         ${cardContent}
                         ${waitingHtml}
                     </div>
