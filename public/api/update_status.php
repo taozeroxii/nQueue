@@ -31,7 +31,7 @@ try {
         $cStmt->execute([':room' => $room]);
 
         // 2. Find next waiting
-        $nextSql = "SELECT id FROM queues WHERE room_number = :room AND status = 'waiting' ORDER BY id ASC LIMIT 1";
+        $nextSql = "SELECT id FROM queues WHERE room_number = :room AND status = 'waiting' AND DATE(created_at) = CURDATE() ORDER BY id ASC LIMIT 1";
         $nStmt = $mysql->prepare($nextSql);
         $nStmt->execute([':room' => $room]);
         $next = $nStmt->fetch();
