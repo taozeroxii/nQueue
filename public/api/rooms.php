@@ -10,7 +10,7 @@ $mysql = $db->getMySQL();
 $dept = $_GET['department'] ?? null;
 
 try {
-    $sql = "SELECT id, room_name, department, description FROM rooms";
+    $sql = "SELECT id, room_name, room_number, department, description FROM rooms";
     $params = [];
 
     if ($dept) {

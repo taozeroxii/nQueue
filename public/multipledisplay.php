@@ -137,11 +137,24 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-500 mb-2 text-sm font-semibold">Filter by Room</label>
-                        <select id="input-room-filter"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none">
-                            <option value="">Show All Rooms</option>
-                        </select>
+                        <label class="block text-slate-500 mb-2 text-sm font-semibold">Filter by Room (Select
+                            Multiple)</label>
+                        <div class="relative">
+                            <button id="room-filter-btn" onclick="toggleRoomFilter()"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-left text-slate-800 focus:border-hospital-blue focus:ring-2 focus:ring-blue-100 focus:outline-none flex justify-between items-center">
+                                <span id="room-filter-label">Select Rooms</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="room-filter-menu"
+                                class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto p-2 grid grid-cols-1 gap-1">
+                                <!-- Checkboxes injected here -->
+                                <div class="text-slate-400 text-sm p-2">Select a department first</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -316,7 +329,19 @@
     <script>
         // State
         let currentDeptFilter = localStorage.getItem('dept_filter') || '';
-        let currentRoomFilter = localStorage.getItem('room_filter') || '';
+
+        let currentRoomFilter = [];
+        try {
+            const stored = localStorage.getItem('room_filter');
+            if (stored) {
+                // Support both old single value and new array
+                if (stored.startsWith('[')) {
+                    currentRoomFilter = JSON.parse(stored);
+                } else {
+                    currentRoomFilter = [stored];
+                }
+            }
+        } catch (e) { currentRoomFilter = []; }
         let ttsRepeat = parseInt(localStorage.getItem('tts_repeat')) || 1;
 
         // Connection Settings
@@ -347,7 +372,9 @@
         const inputName = document.getElementById('input-dept-name');
         const inputSub = document.getElementById('input-dept-sub');
         const inputFilter = document.getElementById('input-dept-filter');
-        const inputRoomFilter = document.getElementById('input-room-filter');
+        const roomFilterMenu = document.getElementById('room-filter-menu');
+        const roomFilterBtn = document.getElementById('room-filter-btn');
+        const roomFilterLabel = document.getElementById('room-filter-label');
         const inputTtsRepeat = document.getElementById('input-tts-repeat');
         const inputApiBase = document.getElementById('input-api-base');
         const inputWsUrl = document.getElementById('input-ws-url');
@@ -378,12 +405,21 @@
 
         async function saveSettings() {
             currentDeptFilter = inputFilter.value;
-            currentRoomFilter = inputRoomFilter.value;
+
+            // Collect checked rooms
+            const checked = [];
+            document.querySelectorAll('input[name="room_select"]:checked').forEach(cb => {
+                checked.push(cb.value);
+            });
+            currentRoomFilter = checked;
+
             ttsRepeat = parseInt(inputTtsRepeat.value) || 1;
 
             localStorage.setItem('dept_filter', currentDeptFilter);
-            localStorage.setItem('room_filter', currentRoomFilter);
+            localStorage.setItem('room_filter', JSON.stringify(currentRoomFilter));
             localStorage.setItem('tts_repeat', ttsRepeat);
+
+            updateRoomFilterLabel();
 
             // Save Connection Settings
             const newApiBase = inputApiBase.value.trim();
@@ -411,10 +447,10 @@
 
         async function onDeptFilterChange() {
             const dept = inputFilter.value;
-            await updateRoomFilterOptions(dept, '');
+            await updateRoomFilterOptions(dept, []);
         }
 
-        async function updateRoomFilterOptions(dept, selectedRoom) {
+        async function updateRoomFilterOptions(dept, selectedRooms) {
             try {
                 let url = getApiUrl('api/rooms.php');
                 if (dept) url += `?department=${encodeURIComponent(dept)}`;
@@ -422,12 +458,52 @@
                 const d = await r.json();
                 if (d.success) {
                     const rooms = d.data;
-                    inputRoomFilter.innerHTML = '<option value="">Show All Rooms</option>' +
-                        rooms.map(r => `<option value="${r.id}">${r.room_name}</option>`).join('');
-                    if (selectedRoom) inputRoomFilter.value = selectedRoom;
+
+                    if (rooms.length === 0) {
+                        roomFilterMenu.innerHTML = '<div class="text-slate-400 text-sm p-2">No rooms found</div>';
+                        updateRoomFilterLabel();
+                        return;
+                    }
+
+                    roomFilterMenu.innerHTML = rooms.map(r => {
+                        const isChecked = selectedRooms.includes(String(r.id)) || selectedRooms.includes(r.id);
+                        return `
+                            <label class="flex items-center space-x-2 p-2 rounded hover:bg-blue-50 cursor-pointer">
+                                <input type="checkbox" name="room_select" value="${r.id}" ${isChecked ? 'checked' : ''} class="w-4 h-4 text-hospital-blue rounded focus:ring-blue-500" onchange="updateRoomFilterLabel()">
+                                <span class="text-sm font-medium text-slate-700 truncate" title="${r.room_name}">${r.room_name}</span>
+                            </label>
+                        `;
+                    }).join('');
+                    updateRoomFilterLabel();
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                roomFilterMenu.innerHTML = '<div class="text-red-400 text-sm p-2">Error loading rooms</div>';
+             }
         }
+
+        function toggleRoomFilter() {
+            roomFilterMenu.classList.toggle('hidden');
+        }
+
+        function updateRoomFilterLabel() {
+            const checked = document.querySelectorAll('input[name="room_select"]:checked');
+            if (checked.length === 0) {
+                roomFilterLabel.innerText = "Select Rooms (All)";
+                roomFilterLabel.className = "text-slate-400 italic";
+            } else {
+                roomFilterLabel.innerText = `${checked.length} Room(s) Selected`;
+                roomFilterLabel.className = "text-hospital-blue font-bold";
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const isClickInside = roomFilterBtn.contains(event.target) || roomFilterMenu.contains(event.target);
+            if (!isClickInside && !roomFilterMenu.classList.contains('hidden')) {
+                roomFilterMenu.classList.add('hidden');
+            }
+        });
 
         async function loadInitData() {
             try {
@@ -570,6 +646,11 @@
 
         function processAndRender() {
             const roomCards = allRooms.map(room => {
+                // Filter Logic Update: Check if room.id is in currentRoomFilter list (if list is not empty)
+                if (currentRoomFilter && currentRoomFilter.length > 0) {
+                    if (!currentRoomFilter.includes(String(room.id))) return '';
+                }
+
                 const activeCall = allQueues.find(q => q.status === 'called' && String(q.room_number) === String(room.id));
                 const waitingForThisRoom = allQueues.filter(q => q.status === 'waiting' && String(q.room_number) === String(room.id));
                 const totalWaiting = waitingForThisRoom.length;
@@ -618,7 +699,7 @@
                              <!-- Header Room Name -->
                              <div class="w-full ${headerClass} py-4 px-2 transition-colors duration-300">
                                 <div class="flex flex-col items-center">
-                                    <h2 class="text-4xl font-black tracking-tight mt-1">ห้องตรวจ ${room.room_name}</h2>
+                                    <h2 class="text-4xl font-black tracking-tight mt-1"> ${room.room_name}</h2>
                                 </div>
                              </div>
 
@@ -633,7 +714,6 @@
                         </div>
                     `;
                 } else {
-                    if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
                     cardContent = `
                         <div class="bg-white p-0 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center opacity-80 min-h-[400px] hover:opacity-100 transition-opacity">
                              <div class="w-full bg-slate-100 py-4 border-b border-slate-200">
@@ -647,14 +727,13 @@
                     `;
                 }
 
-                if (currentRoomFilter && String(room.id) !== String(currentRoomFilter)) return '';
                 return `
                     <div class="flex flex-col gap-4">
                         ${cardContent}
                         ${waitingHtml}
                     </div>
                 `;
-            });
+            }).filter(Boolean); // Filter out empty strings
             renderPagination(roomCards);
         }
 
@@ -676,8 +755,8 @@
 
             const makeItem = (q, bg) => `
                 <div class="flex flex-col items-center justify-center bg-white px-6 py-3 rounded-2xl min-w-[140px] border border-slate-200 shadow-lg animate-pulse-slow">
-                     <span class="text-2xl font-black text-slate-800">${q.oqueue || q.vn}</span>
-                     <span class="text-xs text-slate-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                        <span class="text-2xl font-black text-slate-800">${q.oqueue || q.vn}</span>
+                        <span class="text-xs text-slate-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
                 </div>
             `;
             labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
@@ -731,8 +810,16 @@
             const numberFiles = getThaiNumberFiles(num);
 
             // Get Sequence for Room
-            const roomNum = parseInt(item.room_number);
-            const roomFiles = (!isNaN(roomNum)) ? getThaiNumberFiles(roomNum) : [];
+            // LOOKUP FROM ALLROOMS using ID to get custom room_number
+            const roomObj = allRooms.find(r => String(r.id) === String(item.room_number));
+            let actualRoomNum = parseInt(item.room_number); // Default to ID
+
+            if (roomObj && roomObj.room_number) {
+                const parsed = parseInt(roomObj.room_number);
+                if (!isNaN(parsed)) actualRoomNum = parsed;
+            }
+
+            const roomFiles = (!isNaN(actualRoomNum)) ? getThaiNumberFiles(actualRoomNum) : [];
 
             const files = [
                 'Prompt4/Prompt4_Number.wav',
