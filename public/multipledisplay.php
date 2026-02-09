@@ -480,7 +480,7 @@
             } catch (e) {
                 console.error(e);
                 roomFilterMenu.innerHTML = '<div class="text-red-400 text-sm p-2">Error loading rooms</div>';
-             }
+            }
         }
 
         function toggleRoomFilter() {
@@ -499,7 +499,7 @@
         }
 
         // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const isClickInside = roomFilterBtn.contains(event.target) || roomFilterMenu.contains(event.target);
             if (!isClickInside && !roomFilterMenu.classList.contains('hidden')) {
                 roomFilterMenu.classList.add('hidden');
@@ -751,8 +751,11 @@
         }
 
         function renderLabXray() {
-            const labs = allQueues.filter(q => q.status === 'lab');
-            const xrays = allQueues.filter(q => q.status === 'xray');
+            // Filter: Only show Lab/Xray for rooms in the current department list
+            const validRoomIds = allRooms.map(r => String(r.id));
+
+            const labs = allQueues.filter(q => q.status === 'lab' && validRoomIds.includes(String(q.room_number)));
+            const xrays = allQueues.filter(q => q.status === 'xray' && validRoomIds.includes(String(q.room_number)));
 
             const makeItem = (q, bg) => `
                 <div class="flex flex-col items-center justify-center bg-white px-6 py-3 rounded-2xl min-w-[140px] border border-slate-200 shadow-lg animate-pulse-slow">
