@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Queues</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/vendor/tailwind/tailwind.js"></script>
+    <link href="assets/vendor/css/prompt.css" rel="stylesheet">
+    <script src="assets/vendor/sweetalert2/sweetalert2.js"></script>
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -28,11 +28,13 @@
         </h1>
 
         <div class="flex flex-col md:flex-row gap-4 mb-6">
-            <select id="dept-filter" class="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-1/3" onchange="onDeptChange()">
+            <select id="dept-filter" class="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-1/3"
+                onchange="onDeptChange()">
                 <option value="">เลือกแผนก...</option>
                 <!-- Injected via JS -->
             </select>
-            <select id="room-filter" class="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-1/3" onchange="fetchList()" disabled>
+            <select id="room-filter" class="border border-gray-300 rounded-lg px-4 py-2 w-full md:w-1/3"
+                onchange="fetchList()" disabled>
                 <option value="">เลือกห้อง...</option>
                 <!-- Injected via JS -->
             </select>

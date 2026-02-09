@@ -10,9 +10,9 @@ $room = $_GET['room'] ?? 1;
     <title>Kiosk - Room
         <?php echo $room; ?>
     </title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="assets/vendor/tailwind/tailwind.js"></script>
+    <script src="assets/vendor/sweetalert2/sweetalert2.js"></script>
+    <link href="assets/vendor/css/prompt.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -105,9 +105,9 @@ $room = $_GET['room'] ?? 1;
 
     <!-- Hidden audio for feedback -->
     <audio id="beep-success"
-        src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"></audio>
+        src="assets/vendor/audio/success.mp3"></audio>
     <audio id="beep-error"
-        src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
+        src="assets/vendor/audio/error.mp3"></audio>
 
     <script>
         const room = "<?php echo $room; ?>";

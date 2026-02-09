@@ -33,7 +33,7 @@ if ($selectedDept) {
             }
         }
         if (!$validRoom && count($rooms) > 0) {
-           $room = $rooms[0]['id']; 
+            $room = $rooms[0]['id'];
         }
     }
 }
@@ -45,9 +45,9 @@ if ($selectedDept) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiosk <?php echo $selectedDept ? "- $selectedDept" : ""; ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="assets/vendor/tailwind/tailwind.js"></script>
+    <script src="assets/vendor/sweetalert2/sweetalert2.js"></script>
+    <link href="assets/vendor/css/prompt.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -103,14 +103,19 @@ if ($selectedDept) {
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($departments as $dept): ?>
-                    <a href="?dept=<?php echo urlencode($dept); ?>" 
-                       class="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-500 flex flex-col items-center justify-center h-48">
-                        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <a href="?dept=<?php echo urlencode($dept); ?>"
+                        class="group bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all border-2 border-transparent hover:border-indigo-500 flex flex-col items-center justify-center h-48">
+                        <div
+                            class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors"><?php echo htmlspecialchars($dept); ?></h2>
+                        <h2 class="text-2xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
+                            <?php echo htmlspecialchars($dept); ?>
+                        </h2>
                     </a>
                 <?php endforeach; ?>
             </div>
@@ -118,15 +123,17 @@ if ($selectedDept) {
 
     <?php else: ?>
         <!-- Kiosk Screen -->
-        
+
         <!-- Back Button & Rooms -->
-        <div class="fixed top-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur shadow-sm flex items-center justify-between">
-             <a href="kiosk2.php" class="flex items-center text-gray-500 hover:text-indigo-600 font-bold px-4 py-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div
+            class="fixed top-0 left-0 right-0 p-4 z-50 bg-white/80 backdrop-blur shadow-sm flex items-center justify-between">
+            <a href="kiosk2.php" class="flex items-center text-gray-500 hover:text-indigo-600 font-bold px-4 py-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 Back
-             </a>
+            </a>
 
             <div class="flex space-x-2 overflow-x-auto no-scrollbar mx-4">
                 <?php foreach ($rooms as $r): ?>
@@ -137,12 +144,13 @@ if ($selectedDept) {
                     </a>
                 <?php endforeach; ?>
             </div>
-            
-             <div class="w-20"></div> <!-- Spacer for balance -->
+
+            <div class="w-20"></div> <!-- Spacer for balance -->
         </div>
 
         <!-- Main Content -->
-        <div class="mt-24 bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border-t-8 border-indigo-600 relative overflow-hidden animate-fade-in-up">
+        <div
+            class="mt-24 bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border-t-8 border-indigo-600 relative overflow-hidden animate-fade-in-up">
             <div class="mb-8">
                 <div class="w-32 h-32 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 relative">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-500" fill="none"
@@ -159,7 +167,7 @@ if ($selectedDept) {
                 <h1 class="text-2xl font-bold text-gray-800">จุดรับบริการคิว</h1>
                 <p class="text-indigo-600 font-medium mb-1"><?php echo htmlspecialchars($selectedDept); ?></p>
                 <p class="text-gray-400 text-sm">Scan QR Code / Barcode (VN)</p>
-                
+
                 <div class="mt-4 inline-block px-4 py-1 bg-indigo-100 text-indigo-700 rounded-full font-semibold text-sm">
                     ห้องตรวจที่
                     <?php echo $room; ?>
@@ -185,10 +193,8 @@ if ($selectedDept) {
         </div>
 
         <!-- Hidden audio for feedback -->
-        <audio id="beep-success"
-            src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"></audio>
-        <audio id="beep-error"
-            src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3"></audio>
+        <audio id="beep-success" src="assets/vendor/audio/success.mp3"></audio>
+        <audio id="beep-error" src="assets/vendor/audio/error.mp3"></audio>
 
         <script>
             const room = "<?php echo $room; ?>";
@@ -196,10 +202,10 @@ if ($selectedDept) {
 
             // Ensure focus is always on input
             document.addEventListener('click', () => {
-                 if(input) input.focus();
+                if (input) input.focus();
             });
 
-            if(input) {
+            if (input) {
                 input.addEventListener('keypress', async (e) => {
                     if (e.key === 'Enter') {
                         const vn = input.value.trim();

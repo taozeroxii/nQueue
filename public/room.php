@@ -8,8 +8,8 @@ $room = $_GET['room'] ?? 1; // Default fallback
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Queue Display</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="assets/vendor/tailwind/tailwind.js"></script>
+    <link href="assets/vendor/css/prompt.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Prompt', sans-serif;
