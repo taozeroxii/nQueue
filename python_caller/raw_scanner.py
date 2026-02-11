@@ -133,7 +133,7 @@ _setup_apis()
 
 # Config
 DEFAULT_CONFIG = {
-    'api_base': "http://localhost/nQueue/public/api",
+    'api_base': "http://172.18.2.54/nQueue/public/api",
     'device_map': {}, # "handle_str": room_id
     'last_dept': ''
 }
@@ -147,7 +147,7 @@ class RawScannerApp:
         
         self.config = self.load_config()
         self.device_map = self.config.get('device_map', {})
-        self.api_base = self.config.get('api_base', "http://localhost/nQueue/public/api")
+        self.api_base = self.config.get('api_base', "http://172.18.2.54/nQueue/public/api")
         
         self.buffer_map = {} # handle -> string buffer
         
@@ -177,6 +177,21 @@ class RawScannerApp:
                 json.dump(self.config, f, indent=4)
         except: pass
 
+    def save_api_config(self):
+        val = self.entry_api.get().strip()
+        if not val:
+            messagebox.showerror("Error", "Please enter API URL")
+            return
+        
+        # Remove trailing slash
+        if val.endswith('/'): val = val[:-1]
+
+        self.api_base = val
+        self.config['api_base'] = val
+        self.save_config()
+        self.log(f"API Base updated to: {val}")
+        self.load_depts()
+
     def setup_tabs(self):
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True)
@@ -198,6 +213,17 @@ class RawScannerApp:
         self.load_depts()
 
     def setup_settings_tab(self):
+        # API Config
+        conn_frame = tk.Frame(self.tab_settings, pady=10)
+        conn_frame.pack(fill='x', padx=10)
+        
+        tk.Label(conn_frame, text="API URL:", font=("bold", 10)).pack(side='left')
+        self.entry_api = tk.Entry(conn_frame, width=40)
+        self.entry_api.pack(side='left', padx=5)
+        self.entry_api.insert(0, self.api_base)
+        
+        tk.Button(conn_frame, text="Save & Connect", command=self.save_api_config, bg="#bef264").pack(side='left', padx=5)
+
         # Header
         top_frame = tk.Frame(self.tab_settings, pady=10)
         top_frame.pack(fill='x', padx=10)
@@ -545,7 +571,7 @@ class RawScannerApp:
                 self.log(f"SCAN {vn} -> Room {room}")
                 
                 # --- PREFIX LOGIC START ---
-                if vn.startswith('204'):
+                if vn.startswith(('204', '200')):
                     vn = vn[3:]
                     self.log(f"PREFIX DETECTED: 204. Modified VN -> {vn}")
                 # --- PREFIX LOGIC END ---
