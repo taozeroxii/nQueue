@@ -36,7 +36,7 @@ class MiniCallerApp:
         self.root = root
         self.root.title("Caller")
         # Fixed Size as requested
-        self.root.geometry("280x230") 
+        self.root.geometry("280x280") 
         self.root.configure(bg=THEME['bg_main'])
         self.root.attributes('-topmost', True)
         self.root.resizable(False, False)
@@ -127,14 +127,17 @@ class MiniCallerApp:
                 b.bind("<Leave>", lambda e: b.config(bg=bg))
             return b
 
-        # Row 0: Lab and X-ray (Initially Disabled)
+        # Row 0: Lab, X-ray, Not Found (Initially Disabled)
         self.btn_lab = mk_btn("🧪 To Lab", self.send_to_lab, THEME['btn_sec'], THEME['btn_sec_h'], 0, 0, state='disabled')
         self.btn_xray = mk_btn("☢ To X-ray", self.send_to_xray, THEME['btn_sec'], THEME['btn_sec_h'], 0, 1, state='disabled')
-        self.btn_list = mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 0, 2)
+        self.btn_notfound = mk_btn("❌ ไม่พบ", self.send_to_not_found, THEME['btn_sec'], THEME['btn_sec_h'], 0, 2, state='disabled')
 
-        # Row 1: Main Controls
-        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 1, 0)
-        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 1, 1, colspan=2)
+        # Row 1: List & Recall
+        self.btn_list = mk_btn("☰ List", self.show_list, THEME['btn_sec'], THEME['btn_sec_h'], 1, 0)
+        mk_btn("↺ Recall", self.recall_prev, THEME['btn_recall'], THEME['btn_recall_h'], 1, 1)
+
+        # Row 2: Call Next (Full Width)
+        mk_btn("🔊 CALL NEXT", self.call_next, THEME['btn_call'], THEME['btn_call_h'], 2, 0, colspan=3)
 
     # --- Logic Section (Same Logic) ---
 
@@ -212,6 +215,10 @@ class MiniCallerApp:
         if self.current_queue_id:
             threading.Thread(target=lambda: self._update_status(self.current_queue_id, 'xray')).start()
 
+    def send_to_not_found(self):
+        if self.current_queue_id:
+            threading.Thread(target=lambda: self._update_status(self.current_queue_id, 'not_found')).start()
+
     def set_status(self, status):
         threading.Thread(target=lambda: self._do_set_status_room_active(status)).start()
         
@@ -247,11 +254,13 @@ class MiniCallerApp:
         self.tab_waiting = ttk.Frame(tabs); tabs.add(self.tab_waiting, text='Waiting')
         self.tab_lab = ttk.Frame(tabs); tabs.add(self.tab_lab, text='Lab')
         self.tab_xray = ttk.Frame(tabs); tabs.add(self.tab_xray, text='X-Ray')
+        self.tab_notfound = ttk.Frame(tabs); tabs.add(self.tab_notfound, text='Not Found')
         self.tab_processed = ttk.Frame(tabs); tabs.add(self.tab_processed, text='History')
         
         self.tree_waiting = self._create_tree(self.tab_waiting, 'waiting')
         self.tree_lab = self._create_tree(self.tab_lab, 'lab')
         self.tree_xray = self._create_tree(self.tab_xray, 'xray')
+        self.tree_notfound = self._create_tree(self.tab_notfound, 'not_found')
         self.tree_processed = self._create_tree(self.tab_processed, 'history')
         
         ttk.Button(self.list_win, text="Refresh", command=self.load_all_lists).pack(pady=5)
@@ -278,6 +287,7 @@ class MiniCallerApp:
             menu.add_separator()
             menu.add_command(label="🧪 Send to Lab", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'lab')).start())
             menu.add_command(label="☢ Send to X-ray", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'xray')).start())
+            menu.add_command(label="❌ Not Found", command=lambda: threading.Thread(target=lambda: self._update_status(db_id, 'not_found')).start())
             menu.tk_popup(event.x_root, event.y_root)
         else:
              # Allow calling from history (Recall) and other lists
@@ -303,21 +313,23 @@ class MiniCallerApp:
             r = requests.get(f"{self.api_base}/queue_data.php?room={self.room_id}&limit=200", timeout=2)
             data = r.json()
             if data['success']:
-                wait, lab, xray, history = [], [], [], []
+                wait, lab, xray, notfound, history = [], [], [], [], []
                 for q in data['data']:
                     st = q['status']
                     if st == 'waiting': wait.append(q)
                     elif st == 'lab': lab.append(q)
                     elif st == 'xray': xray.append(q)
+                    elif st == 'not_found': notfound.append(q)
                     if st in ['completed', 'called']: history.append(q)
-                self.root.after(0, lambda: self._update_trees(wait, lab, xray, history))
+                self.root.after(0, lambda: self._update_trees(wait, lab, xray, notfound, history))
         except: pass
 
-    def _update_trees(self, wait, lab, xray, history):
+    def _update_trees(self, wait, lab, xray, notfound, history):
         if not hasattr(self, 'list_win') or not self.list_win.winfo_exists(): return
         self._fill_tree(self.tree_waiting, wait)
         self._fill_tree(self.tree_lab, lab)
         self._fill_tree(self.tree_xray, xray)
+        self._fill_tree(self.tree_notfound, notfound)
         self._fill_tree(self.tree_processed, history)
 
     def _fill_tree(self, tree, items):
@@ -356,7 +368,7 @@ class MiniCallerApp:
         cursor = 'hand2' if enable else 'arrow'
         bg = THEME['btn_sec'] if enable else '#555'
         
-        for b in [self.btn_lab, self.btn_xray]:
+        for b in [self.btn_lab, self.btn_xray, self.btn_notfound]:
             b.config(state=state, cursor=cursor, bg=bg)
             if enable:
                 b.bind("<Enter>", lambda e, b=b: b.config(bg=THEME['btn_sec_h']))

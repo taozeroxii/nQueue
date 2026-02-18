@@ -279,7 +279,7 @@
     <!-- Main Content -->
     <main class="p-4 lg:p-8 h-[calc(100vh-140px)] grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
         <!-- Main Content Grid -->
-        <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-40">
+        <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-44">
             <!-- Combined Room Card + Waiting List Grid -->
             <div id="room-grid" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 p-4">
                 <!-- Dynamic Content -->
@@ -288,17 +288,31 @@
 
         <!-- Bottom: Lab & X-Ray Status -->
         <div
-            class="fixed bottom-0 left-0 right-0 h-32 bg-white border-t border-slate-200 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-40 grid grid-cols-2 gap-px">
+            class="fixed bottom-0 left-0 right-0 h-36 bg-white border-t border-slate-200 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-40 grid grid-cols-3 gap-px">
+            <!-- Not Found Section -->
+            <div class="relative overflow-hidden group border-r border-slate-200">
+                <div class="absolute inset-0 bg-white group-hover:bg-red-50 transition"></div>
+                <div class="h-full flex items-center px-6 gap-4 relative z-10">
+                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-red-200 pr-4">
+                        <span class="text-red-500 font-bold text-sm tracking-widest uppercase">Not Found</span>
+                        <h3 class="text-2xl font-black text-red-700">เรียกไม่พบ</h3>
+                    </div>
+                    <div id="notfound-list"
+                        class="flex items-center gap-3 overflow-x-auto p-3 scrollbar-hide w-full mask-linear-fade">
+                        <div class="text-slate-400 italic">No patients</div>
+                    </div>
+                </div>
+            </div>
             <!-- Lab Section -->
             <div class="relative overflow-hidden group border-r border-slate-200">
                 <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
-                <div class="h-full flex items-center px-8 gap-6 relative z-10">
-                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-6">
+                <div class="h-full flex items-center px-6 gap-4 relative z-10">
+                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-4">
                         <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Laboratory</span>
-                        <h3 class="text-3xl font-black text-hospital-text">รอ Lab</h3>
+                        <h3 class="text-2xl font-black text-hospital-text">รอ Lab</h3>
                     </div>
                     <div id="lab-list"
-                        class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
+                        class="flex items-center gap-3 overflow-x-auto p-3 scrollbar-hide w-full mask-linear-fade">
                         <!-- Dynamic Items -->
                         <div class="text-slate-400 italic">No patients</div>
                     </div>
@@ -307,13 +321,13 @@
             <!-- X-Ray Section -->
             <div class="relative overflow-hidden group">
                 <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
-                <div class="h-full flex items-center px-8 gap-6 relative z-10">
-                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-6">
+                <div class="h-full flex items-center px-6 gap-4 relative z-10">
+                    <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-4">
                         <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Radiology</span>
-                        <h3 class="text-3xl font-black text-hospital-text">รอ X-Ray</h3>
+                        <h3 class="text-2xl font-black text-hospital-text">รอ X-Ray</h3>
                     </div>
                     <div id="xray-list"
-                        class="flex items-center gap-4 overflow-x-auto p-4 scrollbar-hide w-full mask-linear-fade">
+                        class="flex items-center gap-3 overflow-x-auto p-3 scrollbar-hide w-full mask-linear-fade">
                         <!-- Dynamic Items -->
                         <div class="text-slate-400 italic">No patients</div>
                     </div>
@@ -386,6 +400,7 @@
         const container = document.getElementById('room-grid');
         const labListEl = document.getElementById('lab-list');
         const xrayListEl = document.getElementById('xray-list');
+        const notfoundListEl = document.getElementById('notfound-list');
 
         function openSettings() {
             modal.classList.remove('hidden');
@@ -751,9 +766,10 @@
         }
 
         function renderLabXray() {
-            // Filter: Only show Lab/Xray for rooms in the current department list
+            // Filter: Only show Lab/Xray/NotFound for rooms in the current department list
             const validRoomIds = allRooms.map(r => String(r.id));
 
+            const notfounds = allQueues.filter(q => q.status === 'not_found' && validRoomIds.includes(String(q.room_number)));
             const labs = allQueues.filter(q => q.status === 'lab' && validRoomIds.includes(String(q.room_number)));
             const xrays = allQueues.filter(q => q.status === 'xray' && validRoomIds.includes(String(q.room_number)));
 
@@ -763,6 +779,15 @@
                         <span class="text-xs text-slate-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
                 </div>
             `;
+
+            const makeNotFoundItem = (q) => `
+                <div class="flex flex-col items-center justify-center bg-red-50 px-6 py-3 rounded-2xl min-w-[140px] border border-red-200 shadow-lg animate-pulse-slow">
+                        <span class="text-2xl font-black text-red-700">${q.oqueue || q.vn}</span>
+                        <span class="text-xs text-red-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                </div>
+            `;
+
+            notfoundListEl.innerHTML = notfounds.length ? notfounds.map(q => makeNotFoundItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
             labListEl.innerHTML = labs.length ? labs.map(q => makeItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
             xrayListEl.innerHTML = xrays.length ? xrays.map(q => makeItem(q)).join('') : '<div class="text-slate-400 italic pl-4">No patients</div>';
         }

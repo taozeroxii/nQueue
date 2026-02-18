@@ -104,6 +104,8 @@ try {
             $timestampUpdate = ", xray_at = NOW()";
         } elseif ($status === 'lab') {
             $timestampUpdate = ", lab_at = NOW()";
+        } elseif ($status === 'not_found') {
+            $timestampUpdate = ""; // ใช้ updated_at อัตโนมัติ
         } elseif ($status === 'called') {
             $timestampUpdate = ", call_at = NOW()";
         }
