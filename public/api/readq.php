@@ -24,7 +24,7 @@ try {
 
     // [CHANGE 3] Check duplicates in MySQL using oqueue instead of vn
     // ตรวจสอบว่าคิวนี้มีอยู่ในห้องนี้แล้วหรือยัง
-    $checkSql = "SELECT id FROM queues WHERE oqueue = :oqueue AND room_number = :room AND status IN ('waiting', 'called') LIMIT 1";
+    $checkSql = "SELECT id FROM queues WHERE oqueue = :oqueue AND room_number = :room AND status IN ('waiting', 'called') AND DATE(created_at) = CURDATE() LIMIT 1";
     $stm = $mysql->prepare($checkSql);
     $stm->execute([':oqueue' => $oqueue, ':room' => $room]);
     if ($stm->fetch()) {

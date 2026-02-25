@@ -22,7 +22,7 @@ try {
     }
 
     // 1. Check if scan already exists in queue for this room (Prevent Duplicates)
-    $checkSql = "SELECT id FROM queues WHERE vn = :vn AND room_number = :room AND status IN ('waiting', 'called') LIMIT 1";
+    $checkSql = "SELECT id FROM queues WHERE vn = :vn AND room_number = :room AND status IN ('waiting', 'called') AND DATE(created_at) = CURDATE() LIMIT 1";
     $stm = $mysql->prepare($checkSql);
     $stm->execute([':vn' => $vn, ':room' => $room]);
     if ($stm->fetch()) {
