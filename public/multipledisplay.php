@@ -230,7 +230,7 @@
             // Try to speak a silent char/play silent audio to trigger unlock
             // With File Audio, we should try to play an empty buffer or a silent file if we had one
             // Or just a tiny part of a file known to exist
-            const a = new Audio("Prompt4/Prompt4_Number.wav");
+            const a = new Audio("Prompt4/Prompt4_Number.mp3");
             a.volume = 0;
             a.play().then(() => {
                 a.pause();
@@ -798,7 +798,7 @@
             // Play a silent buffer or short file to unlock
             // With File Audio, we should try to play an empty buffer or a silent file if we had one
             // Or just a tiny part of Prompt4_Number
-            const a = new Audio("Prompt4/Prompt4_Number.wav");
+            const a = new Audio("Prompt4/Prompt4_Number.mp3");
             a.volume = 0;
             a.play().then(() => {
                 a.pause();
@@ -823,7 +823,7 @@
 
             // Construct File List
             // 1. Prompt4_Number (prefix)
-            // 2. Prompt4_{int}.wav (number)
+            // 2. Prompt4_{int}.mp3 (number)
             // 3. Prompt4_Sir (suffix)
 
             // Extract Number
@@ -851,11 +851,11 @@
             const roomFiles = (!isNaN(actualRoomNum)) ? getThaiNumberFiles(actualRoomNum) : [];
 
             const files = [
-                'Prompt4/Prompt4_Number.wav',
+                'Prompt4/Prompt4_Number.mp3',
                 ...numberFiles,
-                'Prompt4/station_old.wav',
+                'Prompt4/station_old.mp3',
                 ...roomFiles,
-                'Prompt4/Prompt4_Sir.wav'
+                'Prompt4/Prompt4_Sir.mp3'
             ];
 
             // Repeat N times
@@ -919,8 +919,8 @@
                 const thousands = Math.floor(num / 1000);
                 num %= 1000;
 
-                files.push(`Prompt4/Prompt4_${thousands}.wav`);
-                files.push('Prompt4/Prompt4_1000.wav');
+                files.push(`Prompt4/Prompt4_${thousands}.mp3`);
+                files.push('Prompt4/Prompt4_1000.mp3');
             }
 
             // Hundreds
@@ -928,8 +928,8 @@
                 const hundreds = Math.floor(num / 100);
                 num %= 100;
 
-                files.push(`Prompt4/Prompt4_${hundreds}.wav`);
-                files.push('Prompt4/Prompt4_100.wav');
+                files.push(`Prompt4/Prompt4_${hundreds}.mp3`);
+                files.push('Prompt4/Prompt4_100.mp3');
             }
 
             // Tens & Ones
@@ -939,43 +939,43 @@
 
                 if (tens === 1) {
                     // 10–19 (Sip ...)
-                    files.push('Prompt4/Prompt4_10.wav');
+                    files.push('Prompt4/Prompt4_10.mp3');
 
                     if (ones === 1) {
-                        files.push('Prompt4/Prompt4_11-1.wav'); // สิบเอ็ด (Sip Et)
+                        files.push('Prompt4/Prompt4_11-1.mp3'); // สิบเอ็ด (Sip Et)
                     } else if (ones > 1) {
-                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                        files.push(`Prompt4/Prompt4_${ones}.mp3`);
                     }
                     return files;
                 }
 
                 if (tens === 2) {
                     // 20–29 (Yi Sip ...)
-                    files.push('Prompt4/Prompt4_20.wav'); // Yi Sip
+                    files.push('Prompt4/Prompt4_20.mp3'); // Yi Sip
 
                     if (ones === 1) {
-                        files.push('Prompt4/Prompt4_11-1.wav'); // Yi Sip Et
+                        files.push('Prompt4/Prompt4_11-1.mp3'); // Yi Sip Et
                     } else if (ones > 1) {
-                        files.push(`Prompt4/Prompt4_${ones}.wav`);
+                        files.push(`Prompt4/Prompt4_${ones}.mp3`);
                     }
                     return files;
                 }
 
                 // 30-90 (Sam Sip, Si Sip, ...)
-                files.push(`Prompt4/Prompt4_${tens}.wav`); // digit (3, 4, 5...)
-                files.push('Prompt4/Prompt4_10.wav'); // Sip
+                files.push(`Prompt4/Prompt4_${tens}.mp3`); // digit (3, 4, 5...)
+                files.push('Prompt4/Prompt4_10.mp3'); // Sip
 
                 if (ones === 1) {
-                    files.push('Prompt4/Prompt4_11-1.wav'); // Et
+                    files.push('Prompt4/Prompt4_11-1.mp3'); // Et
                 } else if (ones > 1) {
-                    files.push(`Prompt4/Prompt4_${ones}.wav`);
+                    files.push(`Prompt4/Prompt4_${ones}.mp3`);
                 }
                 return files;
             }
 
             // Ones only (1-9)
             if (num > 0) {
-                files.push(`Prompt4/Prompt4_${num}.wav`);
+                files.push(`Prompt4/Prompt4_${num}.mp3`);
             }
 
             return files;
