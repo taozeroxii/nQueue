@@ -676,7 +676,7 @@
                     <div class="mt-4 w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="bg-hospital-light px-4 py-2 border-b border-blue-100 flex justify-between items-center">
                              <div class="flex items-center gap-2">
-                                <span class="text-sm font-bold text-hospital-blue uppercase tracking-wider">คิวที่รอเรียก</span>
+                                <span class="text-xl font-bold text-hospital-blue uppercase tracking-wider">คิวที่รอเรียก</span>
                              </div>
                              <span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${totalWaiting}</span>
                         </div>
@@ -690,7 +690,7 @@
                     </div>
                 ` : `
                     <div class="mt-4 w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
-                         <span class="text-xs font-semibold text-slate-400">ไม่มีคิวรอ</span>
+                         <span class="text-sm font-semibold text-slate-400">ไม่มีคิวที่รอเรียก</span>
                     </div>
                 `;
 
@@ -715,7 +715,7 @@
                              <!-- Header Room Name -->
                              <div class="w-full ${headerClass} py-4 px-2 transition-colors duration-300">
                                 <div class="flex flex-col items-center">
-                                    <h2 class="text-4xl font-black tracking-tight mt-1"> ${room.room_name}</h2>
+                                    <h2 class="text-5xl font-black tracking-tight mt-1"> ห้อง ${room.room_name}</h2>
                                 </div>
                              </div>
 
@@ -733,7 +733,7 @@
                     cardContent = `
                         <div class="bg-white p-0 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center opacity-80 min-h-[400px] hover:opacity-100 transition-opacity">
                              <div class="w-full bg-slate-100 py-4 border-b border-slate-200">
-                                <span class="text-2xl text-slate-500 font-bold block truncate">ห้อง ${room.room_name}</span>
+                                <span class="text-4xl text-slate-500 font-bold block truncate">ห้อง ${room.room_name}</span>
                              </div>
                              <div class="flex-1 flex flex-col justify-center items-center">
                                 <h3 class="text-6xl font-black text-slate-300 tracking-tight my-4">ว่าง</h3>
