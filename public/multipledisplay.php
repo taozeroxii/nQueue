@@ -897,6 +897,8 @@
         function playSingleFile(url) {
             return new Promise((resolve, reject) => {
                 const audio = new Audio(url);
+                audio.volume = 1.0;        // เสียงดังสุด
+                audio.playbackRate = 1.25;  // เร็วขึ้น 0.5 เท่า
                 audio.onended = resolve;
                 audio.onerror = () => {
                     // reject(`Error loading ${url}`);
