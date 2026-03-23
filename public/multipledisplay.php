@@ -953,7 +953,7 @@
 
                 if (tens === 2) {
                     // 20–29 (Yi Sip ...)
-                    files.push('Prompt4/Prompt4_20.mp3'); // Yi Sip
+                    files.push('Prompt4/Prompt4_20_[cut_0sec].mp3'); // Yi Sip
 
                     if (ones === 1) {
                         files.push('Prompt4/Prompt4_11-1.mp3'); // Yi Sip Et
