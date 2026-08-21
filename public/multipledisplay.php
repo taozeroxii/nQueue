@@ -1088,7 +1088,7 @@
                 num %= 1000;
 
                 files.push(`Prompt4/Prompt4_${thousands}.mp3`);
-                files.push('Prompt4/Prompt4_1000.mp3');
+                files.push('Prompt4/backupold/Prompt4_1000.wav');
             }
 
             // Hundreds
