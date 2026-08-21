@@ -1,16 +1,18 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['GET', 'POST']);
+ApiSecurity::requireSameOriginForUnsafeMethods();
 
 $db = new Database();
 $mysql = $db->getMySQL();
 
 if (!$mysql) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error']);
-    exit;
+    ApiSecurity::fail('Database error', 500);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -19,26 +21,33 @@ if ($method === 'GET') {
     try {
         $stmt = $mysql->query("SELECT key_name, key_value FROM settings");
         $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-        echo json_encode(['success' => true, 'data' => $settings]);
+        ApiSecurity::respond(['success' => true, 'data' => $settings]);
     } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        ApiSecurity::fail('Settings failed', 500, $e);
     }
 } elseif ($method === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
+    $input = ApiSecurity::readJsonBody();
 
     try {
         $stmt = $mysql->prepare("INSERT INTO settings (key_name, key_value) VALUES (:key, :val) ON DUPLICATE KEY UPDATE key_value = :val");
 
         if (isset($input['dept_name'])) {
-            $stmt->execute([':key' => 'dept_name', ':val' => $input['dept_name']]);
+            $deptName = trim((string) $input['dept_name']);
+            if (strlen($deptName) > 150) {
+                ApiSecurity::fail('Invalid dept_name', 400);
+            }
+            $stmt->execute([':key' => 'dept_name', ':val' => $deptName]);
         }
         if (isset($input['dept_sub'])) {
-            $stmt->execute([':key' => 'dept_sub', ':val' => $input['dept_sub']]);
+            $deptSub = trim((string) $input['dept_sub']);
+            if (strlen($deptSub) > 150) {
+                ApiSecurity::fail('Invalid dept_sub', 400);
+            }
+            $stmt->execute([':key' => 'dept_sub', ':val' => $deptSub]);
         }
 
-        echo json_encode(['success' => true, 'message' => 'Settings saved']);
+        ApiSecurity::respond(['success' => true, 'message' => 'Settings saved']);
     } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        ApiSecurity::fail('Settings save failed', 500, $e);
     }
 }

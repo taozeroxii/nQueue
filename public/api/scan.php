@@ -1,9 +1,13 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
 use App\Notifier;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['GET', 'POST']);
+ApiSecurity::requireSameOriginForUnsafeMethods();
 
 try {
     $db = new Database();
@@ -14,8 +18,13 @@ try {
         throw new Exception('MySQL connection failed');
     }
 
-    $vn = $_GET['vn'] ?? $_POST['vn'] ?? null;
-    $room = $_GET['room'] ?? $_POST['room'] ?? null;
+    $input = $_POST ?: $_GET;
+    if (!$input && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+        $input = ApiSecurity::readJsonBody();
+    }
+
+    $vn = ApiSecurity::optionalStringValue($input['vn'] ?? null, 'vn', 50, '/^[0-9A-Za-z_-]+$/');
+    $room = ApiSecurity::optionalStringValue($input['room'] ?? null, 'room', 20, '/^[0-9A-Za-z_-]+$/');
 
     if (!$vn || !$room) {
         throw new Exception('Missing VN or Room Number');
@@ -97,15 +106,14 @@ try {
 
     $newId = $mysql->lastInsertId();
     // Set display_order = id
-    $mysql->query("UPDATE queues SET display_order = $newId WHERE id = $newId");
-
-
-    echo json_encode(['success' => true, 'message' => 'Queue added', 'id' => $mysql->lastInsertId(), 'data' => $patientData]);
+    $orderStmt = $mysql->prepare("UPDATE queues SET display_order = :display_order WHERE id = :id");
+    $orderStmt->execute([':display_order' => $newId, ':id' => $newId]);
 
     // Notify WS
     (new \App\Notifier())->notify(['event' => 'queue_update', 'room' => $room]);
 
+    ApiSecurity::respond(['success' => true, 'message' => 'Queue added', 'id' => $newId, 'data' => $patientData]);
+
 } catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    ApiSecurity::fail('Scan failed', 400, $e);
 }

@@ -65,6 +65,16 @@
         const roomSelect = document.getElementById('room-filter');
         const tbody = document.getElementById('queue-table-body');
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
         // Initial Load - Fetch Departments
         async function init() {
             try {
@@ -126,15 +136,15 @@
         function renderTable(list) {
             tbody.innerHTML = list.map((item, index) => `
                 <tr class="border-b border-gray-200 hover:bg-gray-100">
-                    <td class="py-3 px-6 text-center font-bold text-blue-600">${item.display_order}</td>
-                    <td class="py-3 px-6 text-center whitespace-nowrap font-medium">${item.oqueue || item.vn}</td>
+                    <td class="py-3 px-6 text-center font-bold text-blue-600">${escapeHtml(item.display_order)}</td>
+                    <td class="py-3 px-6 text-center whitespace-nowrap font-medium">${escapeHtml(item.oqueue || item.vn)}</td>
                     <td class="py-3 px-6 text-left">
                         <div class="flex items-center">
-                            <span class="font-medium">${item.patient_name}</span>
+                            <span class="font-medium">${escapeHtml(item.patient_name)}</span>
                         </div>
                     </td>
                     <td class="py-3 px-6 text-center">
-                        <span class="bg-blue-200 text-blue-600 py-1 px-3 rounded-full text-xs">${item.room_number}</span>
+                        <span class="bg-blue-200 text-blue-600 py-1 px-3 rounded-full text-xs">${escapeHtml(item.room_number)}</span>
                     </td>
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center gap-2">

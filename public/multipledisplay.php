@@ -4,20 +4,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Queue Board (Prompt4)</title>
+    <title>Modern Queue Display</title>
     <script src="assets/vendor/tailwind/tailwind.js"></script>
-    <link href="assets/vendor/css/prompt.css" rel="stylesheet">
+    <link href="assets/vendor/sarabun/sarabun.css" rel="stylesheet">
     <script src="assets/vendor/socket.io/socket.io.js"></script> <!-- Added Socket.IO here as it is used in the file -->
     <style>
+        :root {
+            --display-font: 'Sarabun', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --ink: #0f172a;
+            --brand-blue: #075985;
+            --brand-cyan: #06b6d4;
+            --brand-emerald: #10b981;
+        }
+
+        * {
+            text-rendering: geometricPrecision;
+        }
+
         body {
-            font-family: 'Prompt', sans-serif;
+            font-family: var(--display-font);
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.22), transparent 32rem),
+                radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.16), transparent 28rem),
+                linear-gradient(135deg, #eef7ff 0%, #f8fafc 46%, #ecfeff 100%);
+            color: var(--ink);
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.68);
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
+        }
+
+        .display-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.78));
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            box-shadow: 0 18px 55px rgba(2, 132, 199, 0.14);
+        }
+
+        .brand-orb {
+            background: linear-gradient(135deg, #0ea5e9, #0369a1 58%, #10b981);
+            box-shadow: 0 18px 35px rgba(14, 165, 233, 0.32);
+        }
+
+        .soft-card {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(226, 232, 240, 0.84);
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.1);
+        }
+
+        .called-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
+            border: 1px solid rgba(186, 230, 253, 0.86);
+            box-shadow: 0 26px 75px rgba(2, 132, 199, 0.16);
+        }
+
+        .called-card-hot {
+            background: linear-gradient(180deg, #fff7ed, #ffffff);
+            border: 1px solid rgba(251, 191, 36, 0.9);
+            box-shadow: 0 28px 80px rgba(245, 158, 11, 0.26);
+        }
+
+        .room-header {
+            background: linear-gradient(135deg, #075985, #0284c7 62%, #06b6d4);
+        }
+
+        .room-header-hot {
+            background: linear-gradient(135deg, #f59e0b, #facc15);
+        }
+
+        .queue-number-gradient {
+            background: linear-gradient(135deg, #0f172a 8%, #0369a1 45%, #0891b2 92%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 20px 60px rgba(14, 165, 233, 0.18);
+        }
+
+        .status-dock {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(226, 232, 240, 0.78);
+            box-shadow: 0 -24px 70px rgba(15, 23, 42, 0.12);
+        }
+
+        .status-zone {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.7));
+            border: 1px solid rgba(226, 232, 240, 0.72);
         }
 
         .animate-pulse-slow {
@@ -38,6 +113,15 @@
 
         .queue-item {
             animation: slideIn 0.5s ease-out;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
     <script>
@@ -69,33 +153,42 @@
     </script>
 </head>
 
-<body class="bg-blue-50/50 min-h-screen text-slate-800 overflow-hidden">
+<body class="min-h-screen text-slate-900 overflow-hidden">
 
     <!-- Top Header -->
     <!-- Top Header -->
     <header
-        class="p-4 px-8 flex justify-between items-center bg-white shadow-md border-b-4 border-hospital-blue relative z-50">
+        class="display-header m-4 mb-0 rounded-[2rem] p-5 px-8 flex justify-between items-center relative z-50">
         <div class="flex items-center gap-6">
             <div
-                class="w-16 h-16 bg-hospital-blue/10 rounded-full flex items-center justify-center p-3 shadow-sm border border-hospital-blue/20">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-hospital-blue" fill="none"
+                class="brand-orb w-16 h-16 rounded-3xl flex items-center justify-center p-3 border border-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full text-white" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
             </div>
             <div class="cursor-pointer group" onclick="openSettings()">
+                <div class="flex items-center gap-3">
                 <h1 id="dept-name"
-                    class="text-4xl font-black text-hospital-blue group-hover:text-hospital-accent transition tracking-tight">
+                    class="text-4xl 2xl:text-5xl font-extrabold text-sky-950 group-hover:text-sky-700 transition tracking-tight leading-tight">
                     โรงพยาบาลบุรีรัมย์</h1>
+                    <span id="ws-status-badge"
+                        class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-extrabold text-slate-500 ring-1 ring-slate-200 shadow-sm"
+                        title="WebSocket: connecting">
+                        <span id="ws-status-dot"
+                            class="inline-flex h-4 w-4 rounded-full bg-slate-300 ring-4 ring-slate-200 transition shadow-sm"></span>
+                        <span id="ws-status-text">ws:connecting</span>
+                    </span>
+                </div>
                 <p id="dept-sub"
-                    class="text-slate-500 font-semibold text-xl group-hover:text-hospital-blue transition mt-1">
+                    class="text-slate-500 font-semibold text-xl 2xl:text-2xl group-hover:text-sky-700 transition mt-1">
                     คิวตรวจโรคทั่วไป</p>
             </div>
         </div>
         <div class="text-right">
-            <div id="clock" class="text-5xl font-black tracking-widest text-hospital-text font-mono">00:00</div>
-            <div id="date" class="text-slate-500 font-medium text-lg mt-1">...</div>
+            <div id="clock" class="text-5xl 2xl:text-6xl font-black tracking-tight text-sky-950 tabular-nums">00:00</div>
+            <div id="date" class="text-slate-500 font-semibold text-lg mt-1">...</div>
         </div>
     </header>
 
@@ -277,21 +370,21 @@
     </div>
 
     <!-- Main Content -->
-    <main class="p-4 lg:p-8 h-[calc(100vh-140px)] grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
+    <main class="px-4 lg:px-8 pt-5 pb-40 h-[calc(100vh-112px)] grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-hidden">
         <!-- Main Content Grid -->
-        <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-44">
+        <div id="current-called-container" class="lg:col-span-12 h-full overflow-hidden pb-40">
             <!-- Combined Room Card + Waiting List Grid -->
-            <div id="room-grid" class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 p-4">
+            <div id="room-grid" class="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6 p-2">
                 <!-- Dynamic Content -->
             </div>
         </div>
 
         <!-- Bottom: Lab & X-Ray Status -->
         <div
-            class="fixed bottom-0 left-0 right-0 h-36 bg-white border-t border-slate-200 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-40 grid grid-cols-3 gap-px">
+            class="status-dock fixed bottom-4 left-4 right-4 h-36 rounded-[2rem] z-40 grid grid-cols-3 gap-3 p-3">
             <!-- Not Found Section -->
-            <div class="relative overflow-hidden group border-r border-slate-200">
-                <div class="absolute inset-0 bg-white group-hover:bg-red-50 transition"></div>
+            <div class="status-zone relative overflow-hidden group rounded-[1.5rem]">
+                <div class="absolute inset-0 bg-gradient-to-br from-red-50/80 to-white group-hover:from-red-100/80 transition"></div>
                 <div class="h-full flex items-center px-6 gap-4 relative z-10">
                     <div class="flex flex-col justify-center shrink-0 border-r-2 border-red-200 pr-4">
                         <span class="text-red-500 font-bold text-sm tracking-widest uppercase">Not Found</span>
@@ -304,8 +397,8 @@
                 </div>
             </div>
             <!-- Lab Section -->
-            <div class="relative overflow-hidden group border-r border-slate-200">
-                <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
+            <div class="status-zone relative overflow-hidden group rounded-[1.5rem]">
+                <div class="absolute inset-0 bg-gradient-to-br from-sky-50/80 to-white group-hover:from-sky-100/80 transition"></div>
                 <div class="h-full flex items-center px-6 gap-4 relative z-10">
                     <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-4">
                         <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Laboratory</span>
@@ -319,8 +412,8 @@
                 </div>
             </div>
             <!-- X-Ray Section -->
-            <div class="relative overflow-hidden group">
-                <div class="absolute inset-0 bg-white group-hover:bg-blue-50 transition"></div>
+            <div class="status-zone relative overflow-hidden group rounded-[1.5rem]">
+                <div class="absolute inset-0 bg-gradient-to-br from-violet-50/80 to-white group-hover:from-violet-100/80 transition"></div>
                 <div class="h-full flex items-center px-6 gap-4 relative z-10">
                     <div class="flex flex-col justify-center shrink-0 border-r-2 border-hospital-blue/10 pr-4">
                         <span class="text-hospital-blue font-bold text-sm tracking-widest uppercase">Radiology</span>
@@ -359,9 +452,54 @@
         } catch (e) { currentRoomFilter = []; }
         let ttsRepeat = parseInt(localStorage.getItem('tts_repeat')) || 1;
 
-        // Connection Settings
-        let apiBase = localStorage.getItem('api_base') || ''; // Default empty = relative
-        let wsUrl = localStorage.getItem('ws_url') || 'ws://localhost:8765';
+        // Connection Settings: keep this display local/same-host to avoid delays when offline.
+        const defaultWsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname || 'localhost'}:8765`;
+
+        const isPrivateNetworkHost = (host) => {
+            return host === 'localhost'
+                || host === '127.0.0.1'
+                || host === '::1'
+                || host.endsWith('.local')
+                || /^10\./.test(host)
+                || /^192\.168\./.test(host)
+                || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+        };
+
+        const isLocalUrl = (urlValue, allowedProtocols) => {
+            if (!urlValue) return true;
+            try {
+                const parsed = new URL(urlValue, window.location.href);
+                const host = parsed.hostname;
+                return allowedProtocols.includes(parsed.protocol)
+                    && (
+                        host === window.location.hostname
+                        || isPrivateNetworkHost(host)
+                    );
+            } catch (e) {
+                return false;
+            }
+        };
+
+        const normalizeLocalApiBase = (value) => {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return '';
+            if (isLocalUrl(trimmed, ['http:', 'https:'])) return trimmed;
+            console.warn('External API Base URL ignored. Using local relative API paths instead:', trimmed);
+            localStorage.setItem('api_base', '');
+            return '';
+        };
+
+        const normalizeLocalWsUrl = (value) => {
+            const trimmed = (value || '').trim();
+            if (!trimmed) return defaultWsUrl;
+            if (isLocalUrl(trimmed, ['ws:', 'wss:'])) return trimmed;
+            console.warn('External WebSocket URL ignored. Using local WebSocket instead:', trimmed);
+            localStorage.setItem('ws_url', defaultWsUrl);
+            return defaultWsUrl;
+        };
+
+        let apiBase = normalizeLocalApiBase(localStorage.getItem('api_base')); // Default empty = relative
+        let wsUrl = normalizeLocalWsUrl(localStorage.getItem('ws_url'));
 
         // Helper to construct API URL
         const getApiUrl = (endpoint) => {
@@ -375,6 +513,7 @@
         let allRooms = [];
         let allQueues = [];
         let deptList = [];
+        let queueAudioArmed = false;
 
         let calledPage = 0;
         const CALLED_PAGE_SIZE = 15;
@@ -393,6 +532,9 @@
         const inputTtsRepeat = document.getElementById('input-tts-repeat');
         const inputApiBase = document.getElementById('input-api-base');
         const inputWsUrl = document.getElementById('input-ws-url');
+        const wsStatusBadge = document.getElementById('ws-status-badge');
+        const wsStatusDot = document.getElementById('ws-status-dot');
+        const wsStatusText = document.getElementById('ws-status-text');
 
         const deptOverlay = document.getElementById('dept-select-overlay');
         const deptListEl = document.getElementById('dept-selection-list');
@@ -438,12 +580,12 @@
             updateRoomFilterLabel();
 
             // Save Connection Settings
-            const newApiBase = inputApiBase.value.trim();
-            const newWsUrl = inputWsUrl.value.trim();
+            const newApiBase = normalizeLocalApiBase(inputApiBase.value);
+            const newWsUrl = normalizeLocalWsUrl(inputWsUrl.value);
             const wsChanged = newWsUrl !== wsUrl;
 
             apiBase = newApiBase;
-            wsUrl = newWsUrl || 'ws://localhost:8765'; // Default if empty
+            wsUrl = newWsUrl;
 
             localStorage.setItem('api_base', apiBase);
             localStorage.setItem('ws_url', wsUrl);
@@ -485,8 +627,8 @@
                         const isChecked = selectedRooms.includes(String(r.id)) || selectedRooms.includes(r.id);
                         return `
                             <label class="flex items-center space-x-2 p-2 rounded hover:bg-blue-50 cursor-pointer">
-                                <input type="checkbox" name="room_select" value="${r.id}" ${isChecked ? 'checked' : ''} class="w-4 h-4 text-hospital-blue rounded focus:ring-blue-500" onchange="updateRoomFilterLabel()">
-                                <span class="text-sm font-medium text-slate-700 truncate" title="${r.room_name}">${r.room_name}</span>
+                                <input type="checkbox" name="room_select" value="${escapeHtml(r.id)}" ${isChecked ? 'checked' : ''} class="w-4 h-4 text-hospital-blue rounded focus:ring-blue-500" onchange="updateRoomFilterLabel()">
+                                <span class="text-sm font-medium text-slate-700 truncate" title="${escapeHtml(r.room_name)}">${escapeHtml(r.room_name)}</span>
                             </label>
                         `;
                     }).join('');
@@ -625,10 +767,18 @@
                         const latestTime = new Date(latest.updated_at || latest.created_at).getTime();
                         const uniqueKey = `${latest.id}_${latestTime}`;
 
+                        if (!queueAudioArmed) {
+                            window.lastCalledKey = uniqueKey;
+                            queueAudioArmed = true;
+                            return;
+                        }
+
                         if (window.lastCalledKey !== uniqueKey) {
                             window.lastCalledKey = uniqueKey;
                             speakQueue(latest);
                         }
+                    } else if (!queueAudioArmed) {
+                        queueAudioArmed = true;
                     }
                 }
             } catch (e) {
@@ -660,6 +810,16 @@
             return firstName;
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
         function processAndRender() {
             const roomCards = allRooms.map(room => {
                 // Filter Logic Update: Check if room.id is in currentRoomFilter list (if list is not empty)
@@ -673,24 +833,24 @@
                 const next5 = waitingForThisRoom.slice(0, 5);
 
                 const waitingHtml = next5.length > 0 ? `
-                    <div class="mt-4 w-full bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div class="bg-hospital-light px-4 py-2 border-b border-blue-100 flex justify-between items-center">
+                    <div class="mt-4 w-full soft-card rounded-[1.5rem] overflow-hidden">
+                        <div class="bg-sky-50/80 px-5 py-3 border-b border-sky-100 flex justify-between items-center">
                              <div class="flex items-center gap-2">
-                                <span class="text-xl font-bold text-hospital-blue uppercase tracking-wider">คิวที่รอเรียก</span>
+                                <span class="text-xl font-extrabold text-sky-800 uppercase tracking-wide">คิวที่รอเรียก</span>
                              </div>
-                             <span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">${totalWaiting}</span>
+                             <span class="bg-sky-600 text-white text-sm font-extrabold px-3 py-1 rounded-full shadow-sm">${totalWaiting}</span>
                         </div>
-                        <div class="grid grid-cols-5 divide-x divide-slate-100">
+                        <div class="grid grid-cols-5 gap-2 p-3">
                             ${next5.map(q => `
-                                <div class="flex flex-col items-center justify-center py-4 px-1 group hover:bg-blue-50 transition">
-                                    <span class="font-black text-slate-700 text-4xl tracking-tighter group-hover:text-hospital-blue transition">${q.oqueue || q.vn}</span>
+                                <div class="flex flex-col items-center justify-center py-3 px-1 rounded-2xl bg-slate-50 border border-slate-100 group hover:bg-sky-50 hover:border-sky-200 transition">
+                                    <span class="font-black text-slate-700 text-4xl tracking-tight group-hover:text-sky-700 transition">${escapeHtml(q.oqueue || q.vn)}</span>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 ` : `
-                    <div class="mt-4 w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
-                         <span class="text-sm font-semibold text-slate-400">ไม่มีคิวที่รอเรียก</span>
+                    <div class="mt-4 w-full bg-white/60 border border-dashed border-sky-200 rounded-[1.5rem] p-5 text-center">
+                         <span class="text-base font-bold text-slate-400">ไม่มีคิวที่รอเรียก</span>
                     </div>
                 `;
 
@@ -701,43 +861,49 @@
 
                     // Card Container Styles
                     const containerClass = isBlinking
-                        ? "bg-yellow-50 border-yellow-400 ring-4 ring-yellow-200 shadow-xl scale-[1.02]"
-                        : "bg-white border-slate-200 shadow-lg hover:shadow-xl hover:border-blue-300";
+                        ? "called-card-hot ring-4 ring-amber-200 scale-[1.02]"
+                        : "called-card hover:-translate-y-1";
 
                     // Header Styles
-                    const headerClass = isBlinking ? "bg-yellow-400 text-slate-900" : "bg-hospital-blue text-white";
+                    const headerClass = isBlinking ? "room-header-hot text-slate-950" : "room-header text-white";
 
                     // Number Styles
-                    const numClass = isBlinking ? "text-slate-900 scale-110" : "text-hospital-text";
+                    const numClass = isBlinking ? "text-amber-950 scale-110" : "queue-number-gradient";
 
                     cardContent = `
-                        <div class="relative overflow-hidden rounded-2xl ${containerClass} flex flex-col items-center justify-between text-center transition-all duration-300 ease-out min-h-[400px] border">
+                        <div class="relative overflow-hidden rounded-[2rem] ${containerClass} flex flex-col items-center justify-between text-center transition-all duration-300 ease-out min-h-[400px]">
+                             <div class="absolute -right-14 -top-14 h-36 w-36 rounded-full bg-sky-200/30 blur-2xl"></div>
                              <!-- Header Room Name -->
-                             <div class="w-full ${headerClass} py-4 px-2 transition-colors duration-300">
-                                <div class="flex flex-col items-center">
-                                    <h2 class="text-5xl font-black tracking-tight mt-1"> ห้อง ${room.room_name}</h2>
+                             <div class="w-full ${headerClass} py-4 px-5 transition-colors duration-300">
+                                <div class="flex items-center justify-between gap-4">
+                                    <span class="text-sm font-bold uppercase tracking-[0.24em] opacity-80">Room</span>
+                                    <h2 class="text-5xl font-black tracking-tight mt-1 truncate"> ห้อง ${escapeHtml(room.room_name)}</h2>
                                 </div>
                              </div>
 
                              <!-- Main Calling Number -->
-                             <div class="flex-1 flex flex-col justify-center items-center w-full px-4 py-8 relative z-10 bg-white">
-                                <h3 class="text-[13rem] leading-none font-black tracking-tighter ${numClass} transition-all duration-300 font-mono scale-110 origin-center">${activeCall.oqueue || activeCall.vn}</h3>
+                             <div class="flex-1 flex flex-col justify-center items-center w-full px-5 py-8 relative z-10 bg-white/80">
+                                <div class="text-xs font-extrabold uppercase tracking-[0.32em] text-sky-600 mb-2">Now Calling</div>
+                                <h3 class="text-[12rem] 2xl:text-[14rem] leading-none font-black tracking-tighter ${numClass} transition-all duration-300 scale-110 origin-center">${escapeHtml(activeCall.oqueue || activeCall.vn)}</h3>
                                 
-                                <div class="mt-8 bg-slate-100 rounded-full px-8 py-3 border border-slate-200 max-w-full">
-                                    <p class="text-4xl font-bold text-slate-700 truncate">${maskName(activeCall.patient_name)}</p>
+                                <div class="mt-7 bg-white rounded-full px-8 py-3 border border-slate-200 max-w-full shadow-sm">
+                                    <p class="text-4xl font-extrabold text-slate-700 truncate">${escapeHtml(maskName(activeCall.patient_name))}</p>
                                 </div>
                              </div>
                         </div>
                     `;
                 } else {
                     cardContent = `
-                        <div class="bg-white p-0 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center opacity-80 min-h-[400px] hover:opacity-100 transition-opacity">
-                             <div class="w-full bg-slate-100 py-4 border-b border-slate-200">
-                                <span class="text-4xl text-slate-500 font-bold block truncate">ห้อง ${room.room_name}</span>
+                        <div class="soft-card p-0 rounded-[2rem] flex flex-col items-center justify-center text-center opacity-90 min-h-[400px] hover:opacity-100 hover:-translate-y-1 transition-all">
+                             <div class="w-full bg-white/70 py-4 px-5 border-b border-slate-100 rounded-t-[2rem]">
+                                <span class="text-4xl text-slate-600 font-extrabold block truncate">ห้อง ${escapeHtml(room.room_name)}</span>
                              </div>
                              <div class="flex-1 flex flex-col justify-center items-center">
-                                <h3 class="text-6xl font-black text-slate-300 tracking-tight my-4">ว่าง</h3>
-                                <p class="text-lg text-slate-400">รอเรียกคิว...</p>
+                                <div class="h-24 w-24 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mb-5">
+                                    <span class="text-4xl text-slate-300 font-black">–</span>
+                                </div>
+                                <h3 class="text-6xl font-black text-slate-300 tracking-tight my-2">ว่าง</h3>
+                                <p class="text-xl font-semibold text-slate-400">รอเรียกคิว...</p>
                              </div>
                         </div>
                     `;
@@ -774,16 +940,16 @@
             const xrays = allQueues.filter(q => q.status === 'xray' && validRoomIds.includes(String(q.room_number)));
 
             const makeItem = (q, bg) => `
-                <div class="flex flex-col items-center justify-center bg-white px-6 py-3 rounded-2xl min-w-[140px] border border-slate-200 shadow-lg animate-pulse-slow">
-                        <span class="text-2xl font-black text-slate-800">${q.oqueue || q.vn}</span>
-                        <span class="text-xs text-slate-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                <div class="flex flex-col items-center justify-center bg-white/90 px-6 py-3 rounded-2xl min-w-[140px] border border-sky-100 shadow-sm animate-pulse-slow">
+                        <span class="text-2xl font-black text-sky-900">${escapeHtml(q.oqueue || q.vn)}</span>
+                        <span class="text-xs font-semibold text-slate-500 truncate max-w-[120px]">${escapeHtml(maskName(q.patient_name))}</span>
                 </div>
             `;
 
             const makeNotFoundItem = (q) => `
-                <div class="flex flex-col items-center justify-center bg-red-50 px-6 py-3 rounded-2xl min-w-[140px] border border-red-200 shadow-lg animate-pulse-slow">
-                        <span class="text-2xl font-black text-red-700">${q.oqueue || q.vn}</span>
-                        <span class="text-xs text-red-500 truncate max-w-[120px]">${maskName(q.patient_name)}</span>
+                <div class="flex flex-col items-center justify-center bg-red-50/90 px-6 py-3 rounded-2xl min-w-[140px] border border-red-200 shadow-sm animate-pulse-slow">
+                        <span class="text-2xl font-black text-red-700">${escapeHtml(q.oqueue || q.vn)}</span>
+                        <span class="text-xs font-semibold text-red-500 truncate max-w-[120px]">${escapeHtml(maskName(q.patient_name))}</span>
                 </div>
             `;
 
@@ -977,7 +1143,13 @@
 
             // Ones only (1-9)
             if (num > 0) {
-                files.push(`Prompt4/Prompt4_${num}.mp3`);
+                // ถ้าเลขหลักหน่วยเป็น 1 และมีหลักพัน/ร้อยนำหน้า ต้องใช้ "เอ็ด" (11-1.mp3)
+                // เช่น 1001 = หนึ่งพันเอ็ด, 201 = สองร้อยเอ็ด
+                if (num === 1 && files.length > 0) {
+                    files.push('Prompt4/Prompt4_11-1.mp3');
+                } else {
+                    files.push(`Prompt4/Prompt4_${num}.mp3`);
+                }
             }
 
             return files;
@@ -993,17 +1165,78 @@
         }, 10000);
 
         // WS Init
+        let wsReconnectTimer = null;
+        let wsReconnectAttempts = 0;
+        let wsDisconnectedSince = null;
+        const WS_RELOAD_AFTER_MS = 3 * 60 * 1000;
+
+        function updateWSStatus(status) {
+            if (!wsStatusDot || !wsStatusText || !wsStatusBadge) return;
+
+            const statusConfig = {
+                connected: {
+                    dotClassName: 'inline-flex h-4 w-4 rounded-full bg-emerald-500 ring-4 ring-emerald-200 transition shadow-sm animate-pulse',
+                    badgeClassName: 'inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-extrabold text-emerald-700 ring-1 ring-emerald-200 shadow-sm',
+                    text: 'ws:connected',
+                    title: 'WebSocket: connected'
+                },
+                connecting: {
+                    dotClassName: 'inline-flex h-4 w-4 rounded-full bg-yellow-400 ring-4 ring-yellow-100 transition shadow-sm animate-pulse',
+                    badgeClassName: 'inline-flex items-center gap-2 rounded-full bg-yellow-50 px-3 py-1.5 text-sm font-extrabold text-yellow-700 ring-1 ring-yellow-200 shadow-sm',
+                    text: 'ws:connecting',
+                    title: 'WebSocket: connecting'
+                },
+                disconnected: {
+                    dotClassName: 'inline-flex h-4 w-4 rounded-full bg-red-500 ring-4 ring-red-200 transition shadow-sm',
+                    badgeClassName: 'inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-sm font-extrabold text-red-700 ring-1 ring-red-200 shadow-sm',
+                    text: 'ws:disconnected',
+                    title: 'WebSocket: disconnected'
+                }
+            };
+
+            const config = statusConfig[status] || statusConfig.disconnected;
+            wsStatusDot.className = config.dotClassName;
+            wsStatusBadge.className = config.badgeClassName;
+            wsStatusText.innerText = config.text;
+            wsStatusBadge.title = `${config.title} (${wsUrl})`;
+        }
+
+        function scheduleWSReconnect() {
+            if (wsReconnectTimer) return;
+
+            if (!wsDisconnectedSince) {
+                wsDisconnectedSince = Date.now();
+            }
+
+            wsReconnectAttempts++;
+            const delay = Math.min(3000 + (wsReconnectAttempts - 1) * 1000, 15000);
+
+            wsReconnectTimer = setTimeout(() => {
+                wsReconnectTimer = null;
+                connectWS();
+            }, delay);
+        }
+
         function connectWS() {
             if (window.wsSocket) {
                 if (window.wsSocket.readyState === WebSocket.OPEN || window.wsSocket.readyState === WebSocket.CONNECTING) return;
             }
             console.log("Connecting to WS:", wsUrl);
+            updateWSStatus('connecting');
             const socket = new WebSocket(wsUrl);
             window.wsSocket = socket;
 
             socket.onopen = function () {
                 console.log('Connected');
+                if (wsReconnectTimer) {
+                    clearTimeout(wsReconnectTimer);
+                    wsReconnectTimer = null;
+                }
+                wsReconnectAttempts = 0;
+                wsDisconnectedSince = null;
                 document.body.style.borderTop = "4px solid #10b981";
+                updateWSStatus('connected');
+                fetchQueue();
             };
             socket.onmessage = function (event) {
                 try {
@@ -1016,10 +1249,36 @@
             };
             socket.onclose = function () {
                 document.body.style.borderTop = "4px solid #ef4444";
-                setTimeout(connectWS, 3000);
+                updateWSStatus('disconnected');
+                scheduleWSReconnect();
+            };
+            socket.onerror = function () {
+                document.body.style.borderTop = "4px solid #ef4444";
+                updateWSStatus('disconnected');
+                try {
+                    socket.close();
+                } catch (e) { }
+                scheduleWSReconnect();
             };
         }
+        updateWSStatus('connecting');
         connectWS();
+        setInterval(() => {
+            const socket = window.wsSocket;
+            const isDisconnected = !socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING;
+
+            if (isDisconnected) {
+                if (!wsDisconnectedSince) {
+                    wsDisconnectedSince = Date.now();
+                }
+
+                scheduleWSReconnect();
+
+                if (Date.now() - wsDisconnectedSince >= WS_RELOAD_AFTER_MS) {
+                    window.location.reload();
+                }
+            }
+        }, 10000);
         setInterval(fetchQueue, 30000);
     </script>
 </body>

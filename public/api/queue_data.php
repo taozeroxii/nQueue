@@ -1,20 +1,22 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['GET']);
 
 $db = new Database();
 $mysql = $db->getMySQL();
 
 if (!$mysql) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error']);
-    exit;
+    ApiSecurity::fail('Database error', 500);
 }
 
-$room = $_GET['room'] ?? null;
-$limit = $_GET['limit'] ?? 50;
+$room = ApiSecurity::optionalStringValue($_GET['room'] ?? null, 'room', 20, '/^[0-9A-Za-z_-]+$/');
+$limit = ApiSecurity::intValue($_GET['limit'] ?? 50, 'limit', 1, 200);
+$department = ApiSecurity::optionalStringValue($_GET['department'] ?? null, 'department', 100);
 
 try {
     $where = [];
@@ -23,6 +25,11 @@ try {
     if ($room) {
         $where[] = "room_number = :room";
         $params[':room'] = $room;
+    }
+
+    if ($department) {
+        $where[] = "room_number IN (SELECT id FROM rooms WHERE department = :department)";
+        $params[':department'] = $department;
     }
 
     // Logic:
@@ -49,7 +56,7 @@ try {
     // If we sort strictly by room, 'called' and 'waiting' for Room 1 will be next to each other.
     // Dashboard logic filters 'called' and 'waiting' separately on JS side.
     // So sorting by room number is fine.
-    $sql .= " ORDER BY room_number ASC, display_order ASC, id ASC LIMIT " . (int) $limit;
+    $sql .= " ORDER BY room_number ASC, display_order ASC, id ASC LIMIT " . $limit;
 
     $stmt = $mysql->prepare($sql);
     $stmt->execute($params);
@@ -58,9 +65,8 @@ try {
     // Also get last called for header or sound?
     // Separate query or client side logic.
 
-    echo json_encode(['success' => true, 'data' => $queues]);
+    ApiSecurity::respond(['success' => true, 'data' => $queues]);
 
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    ApiSecurity::fail('Queue data failed', 500, $e);
 }

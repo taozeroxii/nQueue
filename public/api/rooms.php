@@ -1,13 +1,16 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['GET']);
 
 $db = new Database();
 $mysql = $db->getMySQL();
 
-$dept = $_GET['department'] ?? null;
+$dept = ApiSecurity::optionalStringValue($_GET['department'] ?? null, 'department', 100);
 
 try {
     $sql = "SELECT id, room_name, room_number, department, description FROM rooms";
@@ -24,7 +27,7 @@ try {
     $stmt->execute($params);
     $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode(['success' => true, 'data' => $rooms]);
+    ApiSecurity::respond(['success' => true, 'data' => $rooms]);
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    ApiSecurity::fail('Rooms failed', 500, $e);
 }

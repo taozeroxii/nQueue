@@ -1,9 +1,13 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
 use App\Notifier;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['GET', 'POST']);
+ApiSecurity::requireSameOriginForUnsafeMethods();
 
 try {
     $db = new Database();
@@ -14,12 +18,11 @@ try {
     }
 
     $method = $_SERVER['REQUEST_METHOD'];
-    $action = $_GET['action'] ?? null;
 
     if ($method === 'GET') {
         // LIST Queues (Ordered by display_order)
         // Optional: filter by room, dept
-        $room = $_GET['room'] ?? null;
+        $room = ApiSecurity::optionalStringValue($_GET['room'] ?? null, 'room', 20, '/^[0-9A-Za-z_-]+$/');
         $sql = "SELECT id, vn, patient_name, room_number, status, oqueue, display_order FROM queues WHERE status = 'waiting' AND DATE(created_at) = CURDATE()";
         $params = [];
 
@@ -34,17 +37,18 @@ try {
         $stmt->execute($params);
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        echo json_encode(['success' => true, 'data' => $data]);
+        ApiSecurity::respond(['success' => true, 'data' => $data]);
 
     } elseif ($method === 'POST') {
-        $input = json_decode(file_get_contents('php://input'), true);
-        $act = $input['action'] ?? '';
+        $input = ApiSecurity::readJsonBody();
+        $act = ApiSecurity::enumValue($input['action'] ?? '', 'action', ['delete', 'move']);
 
         if ($act === 'delete' && isset($input['id'])) {
             // DELETE
+            $id = ApiSecurity::intValue($input['id'], 'id');
             $stmt = $mysql->prepare("DELETE FROM queues WHERE id = :id");
-            $stmt->execute([':id' => $input['id']]);
-            echo json_encode(['success' => true, 'message' => 'Deleted']);
+            $stmt->execute([':id' => $id]);
+            ApiSecurity::respond(['success' => true, 'message' => 'Deleted']);
 
             // Notify?
             // (new Notifier())->notify(['event' => 'queue_update']); // Generic update
@@ -52,8 +56,8 @@ try {
         } elseif ($act === 'move' && isset($input['id']) && isset($input['direction'])) {
             // MOVE UP/DOWN
             // 1. Find Current Item
-            $id = $input['id'];
-            $dir = $input['direction']; // 'up' or 'down'
+            $id = ApiSecurity::intValue($input['id'], 'id');
+            $dir = ApiSecurity::enumValue($input['direction'], 'direction', ['up', 'down']);
 
             $currStmt = $mysql->prepare("SELECT id, display_order, room_number FROM queues WHERE id = :id");
             $currStmt->execute([':id' => $id]);
@@ -94,11 +98,11 @@ try {
 
                 $mysql->commit();
 
-                echo json_encode(['success' => true, 'message' => 'Moved']);
                 (new Notifier())->notify(['event' => 'queue_update', 'room' => $room]);
+                ApiSecurity::respond(['success' => true, 'message' => 'Moved']);
 
             } else {
-                echo json_encode(['success' => false, 'message' => 'Cannot move further']);
+                ApiSecurity::respond(['success' => false, 'message' => 'Cannot move further']);
             }
 
         } else {
@@ -107,6 +111,5 @@ try {
     }
 
 } catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    ApiSecurity::fail('Queue management failed', 400, $e);
 }

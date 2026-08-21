@@ -1,28 +1,31 @@
 <?php
-header('Content-Type: application/json');
 require __DIR__ . '/../../vendor/autoload.php';
 
 use App\Database;
 use App\Notifier;
+use App\ApiSecurity;
+
+ApiSecurity::applyJsonHeaders();
+ApiSecurity::requireMethods(['POST']);
+ApiSecurity::requireSameOriginForUnsafeMethods();
 
 $db = new Database();
 $mysql = $db->getMySQL();
 
 if (!$mysql) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error']);
-    exit;
+    ApiSecurity::fail('Database error', 500);
 }
 
 // Input: JSON or POST? JSON is cleaner for Python requests
-$input = json_decode(file_get_contents('php://input'), true);
+$input = ApiSecurity::readJsonBody();
 
-$id = $input['id'] ?? null;
-$status = $input['status'] ?? null; // 'called', 'completed'
-$room = $input['room'] ?? null; // Optional: If calling "next", we need room, not ID
+$id = isset($input['id']) ? ApiSecurity::intValue($input['id'], 'id') : null;
+$status = isset($input['status']) ? ApiSecurity::enumValue($input['status'], 'status', ['waiting', 'called', 'completed', 'lab', 'xray', 'not_found']) : null;
+$room = isset($input['room']) ? ApiSecurity::stringValue($input['room'], 'room', 20, '/^[0-9A-Za-z_-]+$/') : null; // Optional: If calling "next", we need room, not ID
+$action = isset($input['action']) ? ApiSecurity::enumValue($input['action'], 'action', ['call_next', 'call_specific', 'recall']) : null;
 
 try {
-    if ($input && isset($input['action']) && $input['action'] === 'call_next' && $room) {
+    if ($action === 'call_next' && $room) {
         // Logic to call next waiting patient for a room
         // 1. Check if there is already a 'called' patient? Maybe complete them automatically?
         // Let's Auto-complete existing 'called' for this room
@@ -44,11 +47,11 @@ try {
             // Notify WS
             (new \App\Notifier())->notify(['event' => 'queue_update', 'room' => $room]);
 
-            echo json_encode(['success' => true, 'message' => 'Called next patient', 'id' => $next['id']]);
+            ApiSecurity::respond(['success' => true, 'message' => 'Called next patient', 'id' => $next['id']]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'No waiting patients']);
+            ApiSecurity::respond(['success' => false, 'message' => 'No waiting patients']);
         }
-    } elseif ($input && isset($input['action']) && $input['action'] === 'call_specific' && $id) {
+    } elseif ($action === 'call_specific' && $id) {
         // CALL SPECIFIC ID (Recall from Lab/Xray or Ticket List)
         // 1. Complete currently called for this room (if any)
         if ($room) {
@@ -79,9 +82,9 @@ try {
             // Also trigger sound? The dashboard monitors 'called' status change.
         }
 
-        echo json_encode(['success' => true, 'message' => 'Called specific patient']);
+        ApiSecurity::respond(['success' => true, 'message' => 'Called specific patient']);
 
-    } elseif ($input && isset($input['action']) && $input['action'] === 'recall' && $room) {
+    } elseif ($action === 'recall' && $room) {
         // Recall Logic: Find currently called patient and re-broadcast
         $sql = "SELECT * FROM queues WHERE room_number = :room AND status = 'called' LIMIT 1";
         $stmt = $mysql->prepare($sql);
@@ -91,9 +94,9 @@ try {
         if ($current) {
             // Notify WS with specific recall event
             (new \App\Notifier())->notify(['event' => 'recall', 'data' => $current]);
-            echo json_encode(['success' => true, 'message' => 'Recalled', 'data' => $current]);
+            ApiSecurity::respond(['success' => true, 'message' => 'Recalled', 'data' => $current]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'No active patient to recall']);
+            ApiSecurity::respond(['success' => false, 'message' => 'No active patient to recall']);
         }
 
     } elseif ($id && $status) {
@@ -126,12 +129,11 @@ try {
             (new \App\Notifier())->notify(['event' => 'queue_update', 'room' => $rParams['room_number']]);
         }
 
-        echo json_encode(['success' => true, 'message' => 'Status updated']);
+        ApiSecurity::respond(['success' => true, 'message' => 'Status updated']);
     } else {
         throw new Exception('Invalid parameters');
     }
 
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    ApiSecurity::fail('Status update failed', 500, $e);
 }
