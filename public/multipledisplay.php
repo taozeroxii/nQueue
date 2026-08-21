@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Queue Display</title>
     <script src="assets/vendor/tailwind/tailwind.js"></script>
-    <link href="assets/vendor/sarabun/sarabun.css" rel="stylesheet">
+    <link href="assets/vendor/css/sarabun.css" rel="stylesheet">
     <script src="assets/vendor/socket.io/socket.io.js"></script> <!-- Added Socket.IO here as it is used in the file -->
     <style>
         :root {
