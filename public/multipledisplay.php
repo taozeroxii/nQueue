@@ -1,3 +1,42 @@
+<?php
+$asset = $_GET['asset'] ?? null;
+if ($asset === 'sarabun-css') {
+    header('Content-Type: text/css; charset=utf-8');
+    header('Cache-Control: public, max-age=31536000, immutable');
+    $weights = [300, 400, 500, 600, 700, 800];
+    foreach ($weights as $weight) {
+        echo "@font-face {\n";
+        echo "    font-family: 'Sarabun';\n";
+        echo "    font-style: normal;\n";
+        echo "    font-weight: {$weight};\n";
+        echo "    font-display: swap;\n";
+        echo "    src: url('multipledisplay.php?asset=sarabun-font&w={$weight}') format('truetype');\n";
+        echo "}\n\n";
+    }
+    exit;
+}
+
+if ($asset === 'sarabun-font') {
+    $weight = (int) ($_GET['w'] ?? 400);
+    $allowedWeights = [300, 400, 500, 600, 700, 800];
+    if (!in_array($weight, $allowedWeights, true)) {
+        http_response_code(404);
+        exit;
+    }
+
+    $fontPath = __DIR__ . "/assets/vendor/fonts/sarabun-{$weight}.ttf";
+    if (!is_file($fontPath)) {
+        http_response_code(404);
+        exit;
+    }
+
+    header('Content-Type: font/ttf');
+    header('Content-Length: ' . filesize($fontPath));
+    header('Cache-Control: public, max-age=31536000, immutable');
+    readfile($fontPath);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="th">
 
@@ -6,7 +45,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Queue Display</title>
     <script src="assets/vendor/tailwind/tailwind.js"></script>
-    <link href="assets/vendor/css/sarabun.css" rel="stylesheet">
+    <link href="multipledisplay.php?asset=sarabun-css" rel="stylesheet">
     <script src="assets/vendor/socket.io/socket.io.js"></script> <!-- Added Socket.IO here as it is used in the file -->
     <style>
         :root {
