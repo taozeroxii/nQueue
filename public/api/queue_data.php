@@ -56,10 +56,14 @@ try {
     // If we sort strictly by room, 'called' and 'waiting' for Room 1 will be next to each other.
     // Dashboard logic filters 'called' and 'waiting' separately on JS side.
     // So sorting by room number is fine.
-    $sql .= " ORDER BY room_number ASC, display_order ASC, id ASC LIMIT " . $limit;
+    $sql .= " ORDER BY room_number ASC, display_order ASC, id ASC LIMIT :limit";
 
     $stmt = $mysql->prepare($sql);
-    $stmt->execute($params);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
     $queues = $stmt->fetchAll();
 
     // Also get last called for header or sound?

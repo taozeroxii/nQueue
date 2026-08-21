@@ -6,18 +6,30 @@ $db = new Database();
 $mysql = $db->getMySQL();
 
 // Get Selected Department and Room
-$selectedDept = $_GET['dept'] ?? null;
-$room = $_GET['room'] ?? null;
+$selectedDept = isset($_GET['dept']) ? trim((string) $_GET['dept']) : null;
+if ($selectedDept !== null && ($selectedDept === '' || strlen($selectedDept) > 100)) {
+    $selectedDept = null;
+}
+
+$room = null;
+if (isset($_GET['room']) && filter_var($_GET['room'], FILTER_VALIDATE_INT) !== false) {
+    $room = (int) $_GET['room'];
+}
 
 // Fetch Departments
 $stmt = $mysql->query("SELECT DISTINCT department FROM rooms WHERE department IS NOT NULL AND department != '' ORDER BY department ASC");
 $departments = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+if ($selectedDept !== null && !in_array($selectedDept, $departments, true)) {
+    $selectedDept = null;
+    $room = null;
+}
+
 // If department is selected, fetch rooms for that department
 $rooms = [];
 if ($selectedDept) {
-    $stmt = $mysql->prepare("SELECT id, room_name FROM rooms WHERE department = ? ORDER BY room_name ASC");
-    $stmt->execute([$selectedDept]);
+    $stmt = $mysql->prepare("SELECT id, room_name FROM rooms WHERE department = :department ORDER BY room_name ASC");
+    $stmt->execute([':department' => $selectedDept]);
     $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // If room is not set or invalid for this department, default to the first one
@@ -27,7 +39,7 @@ if ($selectedDept) {
         // Verify room belongs to department
         $validRoom = false;
         foreach ($rooms as $r) {
-            if ($r['id'] == $room) {
+            if ((int) $r['id'] === (int) $room) {
                 $validRoom = true;
                 break;
             }
@@ -44,7 +56,7 @@ if ($selectedDept) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk <?php echo $selectedDept ? "- $selectedDept" : ""; ?></title>
+    <title>Kiosk <?php echo $selectedDept ? '- ' . htmlspecialchars($selectedDept, ENT_QUOTES, 'UTF-8') : ''; ?></title>
     <script src="assets/vendor/tailwind/tailwind.js"></script>
     <script src="assets/vendor/sweetalert2/sweetalert2.js"></script>
     <link href="assets/vendor/css/prompt.css" rel="stylesheet">
@@ -138,7 +150,7 @@ if ($selectedDept) {
             <div class="flex space-x-2 overflow-x-auto no-scrollbar mx-4">
                 <?php foreach ($rooms as $r): ?>
                     <?php $isActive = ($r['id'] == $room); ?>
-                    <a href="?dept=<?php echo urlencode($selectedDept); ?>&room=<?php echo $r['id']; ?>"
+                    <a href="?dept=<?php echo urlencode($selectedDept); ?>&room=<?php echo (int) $r['id']; ?>"
                         class="px-6 py-2 rounded-full font-bold transition-all transform hover:scale-105 whitespace-nowrap <?php echo $isActive ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-indigo-50 border border-gray-200'; ?>">
                         <?php echo htmlspecialchars($r['room_name']); ?>
                     </a>
@@ -170,7 +182,7 @@ if ($selectedDept) {
 
                 <div class="mt-4 inline-block px-4 py-1 bg-indigo-100 text-indigo-700 rounded-full font-semibold text-sm">
                     ห้องตรวจที่
-                    <?php echo $room; ?>
+                    <?php echo (int) $room; ?>
                 </div>
             </div>
 
@@ -197,7 +209,7 @@ if ($selectedDept) {
         <audio id="beep-error" src="assets/vendor/audio/error.mp3"></audio>
 
         <script>
-            const room = "<?php echo $room; ?>";
+            const room = <?php echo json_encode((int) $room); ?>;
             const input = document.getElementById('vn-input');
 
             // Ensure focus is always on input

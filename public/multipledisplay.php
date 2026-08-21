@@ -5,12 +5,20 @@ if ($asset === 'sarabun-css') {
     header('Cache-Control: public, max-age=31536000, immutable');
     $weights = [300, 400, 500, 600, 700, 800];
     foreach ($weights as $weight) {
+        $fontPath = __DIR__ . "/assets/vendor/fonts/sarabun-{$weight}.ttf";
+        if (!is_file($fontPath)) {
+            $fontPath = __DIR__ . "/assets/vendor/sarabun/sarabun-{$weight}.ttf";
+        }
+
         echo "@font-face {\n";
         echo "    font-family: 'Sarabun';\n";
         echo "    font-style: normal;\n";
         echo "    font-weight: {$weight};\n";
         echo "    font-display: swap;\n";
-        echo "    src: url('multipledisplay.php?asset=sarabun-font&w={$weight}') format('truetype');\n";
+        if (is_file($fontPath)) {
+            $fontData = base64_encode(file_get_contents($fontPath));
+            echo "    src: url('data:font/ttf;base64,{$fontData}') format('truetype');\n";
+        }
         echo "}\n\n";
     }
     exit;

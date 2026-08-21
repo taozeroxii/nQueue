@@ -113,6 +113,16 @@ try {
             $timestampUpdate = ", call_at = NOW()";
         }
 
+        $timestampUpdates = [
+            'xray' => ', xray_at = NOW()',
+            'lab' => ', lab_at = NOW()',
+            'called' => ', call_at = NOW()',
+            'waiting' => '',
+            'completed' => '',
+            'not_found' => '',
+        ];
+        $timestampUpdate = $timestampUpdates[$status] ?? '';
+
         $sql = "UPDATE queues SET status = :status $timestampUpdate WHERE id = :id";
         $stmt = $mysql->prepare($sql);
         $stmt->execute([':status' => $status, ':id' => $id]);
