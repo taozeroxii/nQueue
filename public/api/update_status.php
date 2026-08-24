@@ -16,8 +16,8 @@ if (!$mysql) {
     ApiSecurity::fail('Database error', 500);
 }
 
-// Input: JSON or POST? JSON is cleaner for Python requests
-$input = ApiSecurity::readJsonBody();
+// Accept JSON for the new UI and form-encoded POST for legacy Python callers.
+$input = $_POST ?: ApiSecurity::readJsonBody();
 
 $id = isset($input['id']) ? ApiSecurity::intValue($input['id'], 'id') : null;
 $status = isset($input['status']) ? ApiSecurity::enumValue($input['status'], 'status', ['waiting', 'called', 'completed', 'lab', 'xray', 'not_found']) : null;

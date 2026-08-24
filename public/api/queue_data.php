@@ -15,7 +15,7 @@ if (!$mysql) {
 }
 
 $room = ApiSecurity::optionalStringValue($_GET['room'] ?? null, 'room', 20, '/^[0-9A-Za-z_-]+$/');
-$limit = ApiSecurity::intValue($_GET['limit'] ?? 50, 'limit', 1, 200);
+$limit = ApiSecurity::intValue($_GET['limit'] ?? 50, 'limit', 1, 500);
 $department = ApiSecurity::optionalStringValue($_GET['department'] ?? null, 'department', 100);
 
 try {

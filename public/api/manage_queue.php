@@ -40,7 +40,8 @@ try {
         ApiSecurity::respond(['success' => true, 'data' => $data]);
 
     } elseif ($method === 'POST') {
-        $input = ApiSecurity::readJsonBody();
+        // Accept JSON for the new UI and form-encoded POST for legacy Python tools.
+        $input = $_POST ?: ApiSecurity::readJsonBody();
         $act = ApiSecurity::enumValue($input['action'] ?? '', 'action', ['delete', 'move']);
 
         if ($act === 'delete' && isset($input['id'])) {

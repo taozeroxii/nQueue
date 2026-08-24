@@ -26,7 +26,8 @@ if ($method === 'GET') {
         ApiSecurity::fail('Settings failed', 500, $e);
     }
 } elseif ($method === 'POST') {
-    $input = ApiSecurity::readJsonBody();
+    // Accept JSON and form-encoded POST for backward compatibility with local tools.
+    $input = $_POST ?: ApiSecurity::readJsonBody();
 
     try {
         $stmt = $mysql->prepare("INSERT INTO settings (key_name, key_value) VALUES (:key, :val) ON DUPLICATE KEY UPDATE key_value = :val");
